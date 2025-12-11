@@ -154,7 +154,10 @@
     <section class="cta">
         <h2>¿Listo para transformar la gestión de citas médicas?</h2>
         <p>Únete a MediConnect y experimenta una nueva forma de gestionar la atención médica</p>
-        <button>Registrarse Gratis</button>
+        <a href="{{ route('register') }}" class="btn-register">   
+            <button>Registrarse Gratis</button>
+        </a>
+        
     </section>
 
     <!-- Footer -->
