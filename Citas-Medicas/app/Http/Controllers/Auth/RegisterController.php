@@ -4,52 +4,43 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\http\Request;
-use illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\View\View;
+
 
 class RegisterController extends Controller 
 { 
-    /**
-     * 
-     * Mostrar formulario de registro
-     * 
-     */
 
-    public function show ()
+    public function show () : View
     {
         return view ('auth.register');
     }
 
-    /**
-     * 
-     * Procesar el registro de un nuevo usuario
-     * 
-     */
 
-    public function register (Request $request)
+
+    public function store (Request $request) : RedirectResponse
     {
         //Validar datos del formulario 
-        $validated = $request ->validate 
-        ([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'requiered|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed'
-
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         //Crear nuevo usuario
-        $user = User:: create 
-        ([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make ($validated['password']),
-            'role' => 'paciente'
-        ]);
+            'password' => Hash::make($validated['password']),
+            'role' => 'patient',
+        ]); 
 
-        //Redirigir al usuario a la pagina de login con un mensaje de exito
+        event (new Registered($user));
 
-        //auth()->login($user);
-        //return redirect()-> route ('dashboard')-> with ('success', 'Registro exitoso. Bienvenido!');
+        return redirect()-> route ('login')-> with ('success', 'Registro exitoso. Por favor, inicie sesión.');
     }
 
 
