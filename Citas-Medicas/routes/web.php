@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientDashboardController;
+use App\Http\Controllers\AppointmentController;
 
 
 // ========== RUTAS PÚBLICAS ==========
@@ -39,3 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])
         ->name('logout');
 });
+//rutas de citas médicas se encuentran en routes/patient/appointments.php
+
+Route::post('/citas', [AppointmentController::class, 'store'])
+    ->name('appointments.store');
+Route::post('/citas/{appointment}/cancel', [AppointmentController::class, 'cancel'])    
+    ->name('appointments.cancel');

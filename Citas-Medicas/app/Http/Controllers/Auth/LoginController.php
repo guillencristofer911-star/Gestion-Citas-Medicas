@@ -25,10 +25,10 @@ class LoginController extends Controller
 
         // Autenticar
         if (Auth::attempt($credentials)) {
-            // ✅ IMPORTANTE: Regenerar sesión
+          
             $request->session()->regenerate();
             
-            // ✅ Redirigir a dashboard por nombre de ruta
+          
             return redirect()->route('dashboard')
                 ->with('success', 'Inicio de sesión exitoso.');
         }

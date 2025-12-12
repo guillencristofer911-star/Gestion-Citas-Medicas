@@ -209,16 +209,19 @@
                 <div class="section-title">➕ Solicitar Nueva Cita</div>
                 <div class="section">
                     <form onsubmit="submitAppointment(event)">
-                        <div class="form-group">
-                            <label>Seleccionar Médico</label>
-                            <select required>
-                                <option value="">-- Selecciona un médico --</option>
-                                <option value="1">Dr. Carlos Martínez - Cardiología</option>
-                                <option value="2">Dra. María López - Pediatría</option>
-                                <option value="3">Dr. Jorge Mendoza - Dermatología</option>
-                                <option value="4">Dra. Ana Rodríguez - Neurología</option>
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label>Seleccionar Médico</label>
+                        <select name="doctor_id" required>
+                            <option value="">-- Selecciona un médico --</option>
+                            @forelse($doctors as $doctor)
+                                <option value="{{ $doctor->id }}">
+                                    {{ $doctor->user->name }} - {{ $doctor->specialty }}
+                                </option>
+                            @empty
+                                <option disabled>No hay médicos disponibles</option>
+                            @endforelse
+                        </select>
+                    </div>
 
                         <div class="form-group">
                             <label>Fecha de la Cita</label>

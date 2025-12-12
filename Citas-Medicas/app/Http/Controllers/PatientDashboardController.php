@@ -54,6 +54,11 @@ class PatientDashboardController extends Controller
     ];
     $userRole = $roleTranslations[$user->role] ?? $user->role;
 
+    //doctores activos
+    $doctors = Doctor::where('active', true)
+    ->with ('user')
+    ->get ();
+
     return view('dashboard.patient.index', [
         'user' => $user,
         'appointmentsToday' => $appointmentsToday,
@@ -64,6 +69,7 @@ class PatientDashboardController extends Controller
         'user' => $user,
         'userRole' => $userRole,
         'appointmentsToday' => $appointmentsToday,
+        'doctors' => $doctors,
     ]);
 }
 }
