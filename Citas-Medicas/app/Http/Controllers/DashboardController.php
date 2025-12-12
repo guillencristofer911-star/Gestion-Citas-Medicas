@@ -2,34 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index(): View|RedirectResponse
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function index(): RedirectResponse
     {
         $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('login');
+        // Redirigir según el rol
+        if ($user->role === 'patient') {
+            return redirect()->route('patient.dashboard');
+        } elseif ($user->role === 'doctor') {
+            return redirect()->route('doctor.dashboard');
+        } elseif ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
         }
 
-        $role = $user->role ?? 'patient';
-
-        switch ($role) {
-            case 'patient':
-                return view('dashboard.patient.index', ['user' => $user]);
-            
-            case 'doctor':
-                return view('dashboard.doctor.index', ['user' => $user]);
-            
-            case 'admin':
-                return view('dashboard.admin.index', ['user' => $user]);
-            
-            default:
-                abort(403, 'Rol no autorizado');
-        }
+        // Si no tiene rol, redirige a login
+        return redirect()->route('login');
     }
 }

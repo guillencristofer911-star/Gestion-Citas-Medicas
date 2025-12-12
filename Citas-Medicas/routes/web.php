@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PatientDashboardController;
 
 
 // ========== RUTAS PÚBLICAS ==========
@@ -27,9 +28,12 @@ Route::middleware('guest')->group(function () {
 
 // Rutas protegidas 
 Route::middleware('auth')->group(function () {
-    // dashboard del paciente
+    // Dashboard inicial (redirecciona según rol)
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+
+    Route::get('/paciente/dashboard', [PatientDashboardController::class, 'index'])
+        ->name('patient.dashboard');
 
     // cerrar sesión
     Route::post('/logout', [LoginController::class, 'logout'])

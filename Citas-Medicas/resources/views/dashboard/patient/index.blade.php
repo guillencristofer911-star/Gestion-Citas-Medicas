@@ -43,11 +43,16 @@
                 <div class="user-info">
                     <div class="user-avatar">👤</div>
                     <div>
-                        <h4>Juan Pérez</h4>
-                        <p>Paciente</p>
+                        <h4>{{ $user->name }}</h4>
+                        <p>{{ $userRole }}</p>
+
                     </div>
                 </div>
-                <button class="logout-btn-sidebar" onclick="logout()">Cerrar Sesión</button>
+                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="logout-btn-sidebar">Cerrar Sesión</button>
+                </form>
+
             </div>
         </div>
 
@@ -64,54 +69,56 @@
                         <div class="stat-icon blue">📅</div>
                         <div class="stat-content">
                             <h3>Citas Próximas</h3>
-                            <p class="stat-number">3</p>
+                            <p class="stat-number">{{ $upcomingAppointments }}</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon green">✓</div>
                         <div class="stat-content">
                             <h3>Citas Confirmadas</h3>
-                            <p class="stat-number">5</p>
+                            <p class="stat-number">{{ $confirmedAppointments }}</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon orange">⏳</div>
                         <div class="stat-content">
                             <h3>Pendientes</h3>
-                            <p class="stat-number">1</p>
+                            <p class="stat-number">{{ $pendingAppointments }}</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="section-title">📋 Próximas Citas</div>
                 <div class="section">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Médico</th>
-                                <th>Especialidad</th>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Dr. Carlos Martínez</td>
-                                <td>Cardiología</td>
-                                <td>15/12/2025</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status-badge status-confirmed">Confirmada</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dra. María López</td>
-                                <td>Pediatría</td>
-                                <td>18/12/2025</td>
-                                <td>02:30 PM</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Médico</th>
+                            <th>Especialidad</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($upcomingList as $appointment)
+                        <tr>
+                            <td>{{ $appointment->doctor->user->name }}</td>
+                            <td>{{ $appointment->doctor->specialty }}</td>
+                            <td>{{ $appointment->appointment_date_time->format('d/m/Y') }}</td>
+                            <td>{{ $appointment->appointment_date_time->format('H:i') }}</td>
+                            <td>
+                                @if($appointment->status === 'confirmed')
+                                    <span class="status-badge status-confirmed">Confirmada</span>
+                                @elseif($appointment->status === 'pending')
+                                    <span class="status-badge status-pending">Pendiente</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
                 </div>
             </div>
 

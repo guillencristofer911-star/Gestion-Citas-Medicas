@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediConnect - Sistema de Citas Médicas</title>
-    <link rel="stylesheet" href="{{ asset('css/Landing.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
 </head>
 <body>
     <!-- Navbar -->
@@ -156,7 +156,14 @@
                 <p>La plataforma inteligente para gestionar tus citas médicas de forma sencilla y segura.</p>
             </div>
 
-
+            <div class="footer-col">
+                <h3>Enlaces Rápidos</h3>
+                <ul>
+                    <li><a href="#features">Características</a></li>
+                    <li><a href="#benefits">Beneficios</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
 
             <div class="footer-col">
                 <h3>Soporte</h3>
