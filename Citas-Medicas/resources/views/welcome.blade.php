@@ -3,174 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediConnect - Plataforma de Citas Médicas</title>
-    <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
+    <title>MediConnect - Sistema de Citas Médicas</title>
+    <link rel="stylesheet" href="{{ asset('css/Landing.css') }}">
 </head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ route('welcome') }}" class="navbar-brand">
+                MediConnect
+            </a>
 
-<body> 
-        <!-- Navbar -->
-    <nav>
-        <div class="logo">
-            <div class="logo-icon">🏥</div>
-            <span>MediConnect</span>
+            <ul class="navbar-menu">
+                <li><a href="#features">Características</a></li>
+                <li><a href="#benefits">Beneficios</a></li>
+                <li><a href="#contact">Contacto</a></li>
+            </ul>
+
+            <div class="navbar-buttons">
+                <a href="{{ route('login') }}" class="btn btn-login">
+                    Iniciar Sesión
+                </a>
+                <a href="{{ route('register') }}" class="btn btn-register">
+                    Registrarse
+                </a>
+            </div>
         </div>
-        <ul class="nav-links">
-            <li><a href="#inicio">Inicio</a></li>
-            <li><a href="#caracteristicas">Características</a></li>
-            <li><a href="#roles">Roles</a></li>
-            <li><a href="#contacto">Contacto</a></li>
-        </ul>
-            <div class="nav-buttons">
-        <a href="{{ route('login') }}" class="btn-login">Iniciar Sesión</a>
-        <a href="{{ route('register') }}" class="btn-register">Registrarse</a>
-    </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero" id="inicio">
-        <div class="hero-content">
-            <h1>Gestiona tus citas médicas de forma simple y segura</h1>
-            <p>Plataforma integral para pacientes, médicos y administradores. Agenda, consulta y administra citas médicas en un solo lugar.</p>
-            <div class="hero-buttons">
-                <button class="btn-primary">Comenzar Ahora</button>
-                <button class="btn-secondary">Ver Demo</button>
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>Gestiona tus citas médicas de forma inteligente</h1>
+                <p>MediConnect es la plataforma más moderna para solicitar y administrar citas médicas. Conecta con los mejores especialistas de forma rápida y segura.</p>
+
+                <div class="hero-buttons">
+                    <a href="{{ route('register') }}" class="btn btn-primary">
+                        Comenzar Ahora
+                    </a>
+                    <a href="#features" class="btn btn-secondary">
+                        Conocer Más
+                    </a>
+                </div>
             </div>
-        </div>
-        <div class="hero-image">
-            <svg width="500" height="500" viewBox="0 0 500 500">
-                <circle cx="250" cy="250" r="200" fill="rgba(179,207,229,0.2)"/>
-                <rect x="150" y="150" width="200" height="250" rx="20" fill="white" opacity="0.9"/>
-                <circle cx="250" cy="200" r="30" fill="#FF9F43"/>
-                <rect x="180" y="260" width="140" height="15" rx="7" fill="#B3CFE5"/>
-                <rect x="180" y="290" width="100" height="15" rx="7" fill="#4A7FA7"/>
-                <rect x="180" y="320" width="120" height="15" rx="7" fill="#B3CFE5"/>
-            </svg>
+
+            <div class="hero-image">
+                <svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="150" cy="150" r="140" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+                    <path d="M120 120 L150 90 L180 120 L180 180 Q180 200 160 200 L140 200 Q120 200 120 180 Z" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+                    <circle cx="150" cy="140" r="8" fill="rgba(255,255,255,0.5)"/>
+                    <rect x="130" y="160" width="40" height="8" rx="4" fill="rgba(255,255,255,0.4)"/>
+                </svg>
+            </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="features" id="caracteristicas">
-        <h2 class="section-title">Características Principales</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📅</div>
-                <h3>Gestión de Citas</h3>
-                <p>Agenda, modifica y cancela citas médicas de manera rápida y eficiente con validación de disponibilidad en tiempo real.</p>
+    <section id="features" class="features">
+        <div class="section-container">
+            <div class="section-header">
+                <h2>¿Por qué elegir MediConnect?</h2>
+                <p>Descubre las características que hacen de MediConnect la mejor opción para gestionar tus citas médicas</p>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">👨‍⚕️</div>
-                <h3>Directorio Médico</h3>
-                <p>Accede a un catálogo completo de médicos disponibles con sus especialidades y horarios de atención.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3>Seguridad Total</h3>
-                <p>Protección de datos personales con control de acceso por roles y sesiones seguras para todos los usuarios.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Panel de Control</h3>
-                <p>Visualiza estadísticas, historial de citas y gestiona toda la información desde un dashboard intuitivo.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⏰</div>
-                <h3>Horarios Flexibles</h3>
-                <p>Consulta disponibilidad en tiempo real y selecciona el horario que mejor se adapte a tus necesidades.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">✅</div>
-                <h3>Estados de Cita</h3>
-                <p>Seguimiento completo del estado de tus citas: pendiente, confirmada, atendida o cancelada.</p>
-            </div>
-        </div>
-    </section>
 
-    <!-- Roles Section -->
-    <section class="roles" id="roles">
-        <h2 class="section-title">Diseñado para Todos</h2>
-        <div class="roles-container">
-            <div class="role-card">
-                <div class="role-icon">👤</div>
-                <h3>Pacientes</h3>
-                <p>Gestiona tu salud de forma autónoma</p>
-                <ul>
-                    <li>Ver médicos disponibles</li>
-                    <li>Agendar citas fácilmente</li>
-                    <li>Consultar historial de citas</li>
-                    <li>Cancelar citas si es necesario</li>
-                    <li>Ver estados en tiempo real</li>
-                </ul>
-            </div>
-            <div class="role-card">
-                <div class="role-icon">⚕️</div>
-                <h3>Médicos</h3>
-                <p>Administra tu agenda profesional</p>
-                <ul>
-                    <li>Ver citas asignadas</li>
-                    <li>Actualizar estados de citas</li>
-                    <li>Consultar agenda diaria/semanal</li>
-                    <li>Gestionar disponibilidad</li>
-                    <li>Confirmar atención</li>
-                </ul>
-            </div>
-            <div class="role-card">
-                <div class="role-icon">👨‍💼</div>
-                <h3>Administradores</h3>
-                <p>Control total del sistema</p>
-                <ul>
-                    <li>Gestionar médicos</li>
-                    <li>Definir horarios de atención</li>
-                    <li>Ver todas las citas</li>
-                    <li>Administrar usuarios</li>
-                    <li>Gestionar estados del sistema</li>
-                </ul>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3>Agenda Fácil</h3>
+                    <p>Solicita citas médicas en pocos clics. Interfaz intuitiva y sencilla de usar.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍⚕️</div>
+                    <h3>Mejores Especialistas</h3>
+                    <p>Accede a una red de médicos especializados en diferentes áreas de la salud.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Historial Médico</h3>
+                    <p>Mantén un registro completo de todos tus citas y consultas médicas.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Seguridad Garantizada</h3>
+                    <p>Tus datos personales y médicos están protegidos con los más altos estándares.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⏰</div>
+                    <h3>Disponibilidad 24/7</h3>
+                    <p>Accede a la plataforma en cualquier momento desde cualquier dispositivo.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>App Móvil</h3>
+                    <p>Descarga nuestra aplicación para una experiencia móvil optimizada.</p>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Stats Section -->
-    <section class="stats">
-        <div class="stats-grid">
-            <div class="stat-item">
-                <h2>500+</h2>
-                <p>Citas Gestionadas</p>
-            </div>
-            <div class="stat-item">
-                <h2>40+</h2>
-                <p>Médicos Registrados</p>
-            </div>
-            <div class="stat-item">
-                <h2>140+</h2>
-                <p>Pacientes Activos</p>
-            </div>
-            <div class="stat-item">
-                <h2>99%</h2>
-                <p>Satisfacción</p>
+    <section id="benefits" class="stats">
+        <div class="section-container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>15,000+</h3>
+                    <p>Pacientes Satisfechos</p>
+                </div>
+                <div class="stat-item">
+                    <h3>250+</h3>
+                    <p>Médicos Especialistas</p>
+                </div>
+                <div class="stat-item">
+                    <h3>50,000+</h3>
+                    <p>Citas Realizadas</p>
+                </div>
+                <div class="stat-item">
+                    <h3>98%</h3>
+                    <p>Tasa de Satisfacción</p>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- CTA Section -->
-    <section class="cta">
-        <h2>¿Listo para transformar la gestión de citas médicas?</h2>
-        <p>Únete a MediConnect y experimenta una nueva forma de gestionar la atención médica</p>
-        <a href="{{ route('register') }}" class="btn-register">   
-            <button>Registrarse Gratis</button>
-        </a>
-        
+    <section id="contact" class="cta">
+        <div class="section-container">
+            <h2>¿Listo para comenzar?</h2>
+            <p>Únete a miles de pacientes que ya están gestionando sus citas con MediConnect</p>
+
+            <div class="cta-buttons">
+                <a href="{{ route('register') }}" class="btn btn-primary">
+                    Crear Cuenta Gratis
+                </a>
+                <a href="{{ route('login') }}" class="btn btn-secondary">
+                    Ya tengo cuenta
+                </a>
+            </div>
+        </div>
     </section>
 
     <!-- Footer -->
     <footer>
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="#">Términos de Servicio</a>
-                <a href="#">Política de Privacidad</a>
-                <a href="#">Contacto</a>
-                <a href="#">Ayuda</a>
-                <a href="#">API</a>
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>MediConnect</h3>
+                <p>La plataforma inteligente para gestionar tus citas médicas de forma sencilla y segura.</p>
             </div>
-            <p>&copy; 2024 MediConnect - Sistema de Citas Médicas. Todos los derechos reservados.</p>
+
+
+
+            <div class="footer-col">
+                <h3>Soporte</h3>
+                <ul>
+                    <li><a href="#">Centro de Ayuda</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Contacto</a></li>
+                    <li><a href="#">Estado del Sistema</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="#">Términos y Condiciones</a></li>
+                    <li><a href="#">Política de Privacidad</a></li>
+                    <li><a href="#">Política de Cookies</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2025 MediConnect. Todos los derechos reservados. | Diseñado con ❤️ para tu salud</p>
         </div>
     </footer>
 </body>
+</html>

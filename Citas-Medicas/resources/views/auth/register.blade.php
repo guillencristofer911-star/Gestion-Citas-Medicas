@@ -8,12 +8,13 @@
 </head>
 <body>
     <div class="container">
+        <!-- Sección Izquierda - Información -->
         <div class="left-section">
             <div class="left-content">
                 <div class="logo">MediConnect</div>
                 <h2>Únete a nuestra plataforma</h2>
                 <p>Crea tu cuenta y comienza a gestionar tus citas médicas de forma simple, rápida y segura.</p>
-                
+
                 <div class="features">
                     <div class="feature-item">
                         <div class="feature-icon">✓</div>
@@ -35,65 +36,122 @@
             </div>
         </div>
 
+        <!-- Sección Derecha - Formulario -->
         <div class="right-section">
-            <div class="form-header">
-                <h1>Crear cuenta</h1>
-                <p>¿Ya tienes una cuenta? <a href="#login">Inicia sesión</a></p>
+            <div class="form-container">
+                <h1>Crear Cuenta</h1>
+                <p>Completa los datos para registrarte</p>
+
+                <!-- Mostrar errores si existen -->
+                @if ($errors->any())
+                    <div class="alert alert-error">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- Mostrar mensajes de sesión -->
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                <form method="POST" action="{{ route('register') }}">
+                    @csrf
+
+                    <!-- Nombre Completo -->
+                    <div class="form-group">
+                        <label for="name">Nombre Completo</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name"
+                            value="{{ old('name') }}"
+                            placeholder="Juan Pérez García"
+                            required
+                            @error('name') aria-invalid="true" @enderror
+                        >
+                        @error('name')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email"
+                            value="{{ old('email') }}"
+                            placeholder="tu@email.com"
+                            required
+                            @error('email') aria-invalid="true" @enderror
+                        >
+                        @error('email')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            placeholder="Mínimo 8 caracteres"
+                            required
+                            @error('password') aria-invalid="true" @enderror
+                        >
+                        @error('password')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Confirmar Password -->
+                    <div class="form-group">
+                        <label for="password_confirmation">Confirmar Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="password_confirmation" 
+                            name="password_confirmation"
+                            placeholder="Confirma tu contraseña"
+                            required
+                        >
+                    </div>
+
+                    <!-- Aceptar Términos -->
+                    <div class="checkbox-group">
+                        <div class="checkbox-wrapper">
+                            <input 
+                                type="checkbox" 
+                                id="terms" 
+                                name="terms"
+                                required
+                                @error('terms') aria-invalid="true" @enderror
+                            >
+                            <label for="terms">
+                                Acepto los <a href="#">términos y condiciones</a>
+                            </label>
+                        </div>
+                    </div>
+                    @error('terms')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+
+                    <!-- Botón Submit -->
+                    <button type="submit" class="btn-primary btn-full">
+                        Crear Cuenta
+                    </button>
+                </form>
+
+                <!-- Login Link -->
+                <div class="form-footer">
+                    <p>¿Ya tienes cuenta? <a href="{{ route('login') }}">Inicia sesión aquí</a></p>
+                </div>
             </div>
-
-            <div class="info-note">
-                <strong>Nota:</strong> Al registrarte, tu cuenta será creada como paciente. Los roles de médico o administrador son asignados por el equipo administrativo.
-            </div>
-
-            <div class="success-message" id="successMessage">
-                ¡Cuenta creada exitosamente! Redirigiendo...
-            </div>
-
-            <form action="{{ route('register.store') }}" method="POST" class="auth-form">
-                @csrf
-                <div class="form-group">
-                    <label for="name">Nombre completo</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">👤</span>
-                        <input type="text" id="name" name="name" placeholder="Ingresa tu nombre completo" required>
-                    </div>
-                    <span class="error-message">Por favor ingresa tu nombre</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Correo electrónico</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">📧</span>
-                        <input type="email" id="email" name="email" placeholder="tu@email.com" required>
-                    </div>
-                    <span class="error-message">Por favor ingresa un email válido</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">🔒</span>
-                        <input type="password" id="password" name="password" placeholder="Mínimo 8 caracteres" required>
-                        <button type="button" class="password-toggle" onclick="togglePassword('password')">👁️</button>
-                    </div>
-                    <span class="error-message">La contraseña debe tener al menos 8 caracteres</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="password_confirmation">Confirmar contraseña</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">🔒</span>
-                        <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Repite tu contraseña" required>
-                        <button type="button" class="password-toggle" onclick="togglePassword('password_confirmation')">👁️</button>
-                    </div>
-                    <span class="error-message">Las contraseñas no coinciden</span>
-                </div>
-
-                <button type="submit" class="submit-btn">Crear cuenta</button>
-            </form>
         </div>
     </div>
-        <script src="{{ asset('js/Auth.js') }}"></script>
-
 </body>
 </html>

@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="{{ asset('css/Auth.css') }}">
 </head>
 <body>
-
     <div class="container">
+        <!-- Sección Izquierda - Información -->
         <div class="left-section">
             <div class="left-content">
                 <div class="logo">MediConnect</div>
                 <h2>¡Bienvenido de nuevo!</h2>
                 <p>Inicia sesión para acceder a tu cuenta y gestionar tus citas médicas de forma rápida y segura.</p>
-                
+
                 <div class="features">
                     <div class="feature-item">
                         <div class="feature-icon">✓</div>
@@ -36,52 +36,93 @@
             </div>
         </div>
 
+        <!-- Sección Derecha - Formulario -->
         <div class="right-section">
-            <div class="form-header">
-                <h1>Iniciar sesión</h1>
-                <p>¿No tienes una cuenta? <a href="#registro">Regístrate gratis</a></p>
-            </div>
+            <div class="form-container">
+                <h1>Iniciar Sesión</h1>
+                <p>Accede a tu cuenta con tus credenciales</p>
 
-            <div class="success-message" id="successMessage">
-                ¡Inicio de sesión exitoso! Redirigiendo...
-            </div>
-
-            <div class="alert-error" id="errorMessage">
-                Credenciales incorrectas. Por favor verifica tu email y contraseña.
-            </div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="email">Correo electrónico</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">📧</span>
-                        <input type="email" id="email" name="email" placeholder="tu@email.com" required>
+                <!-- Mostrar errores si existen -->
+                @if ($errors->any())
+                    <div class="alert alert-error">
+                        @foreach ($errors->all() as $error)
+                            <div>{{ $error }}</div>
+                        @endforeach
                     </div>
-                    <span class="error-message">Por favor ingresa un email válido</span>
-                </div>
+                @endif
 
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">🔒</span>
-                        <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña" required>
-                        <button type="button" class="password-toggle" onclick="togglePassword('password')">👁️</button>
+                <!-- Mostrar mensajes de sesión -->
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                <form method="POST" action="{{ route('login') }}">
+                    @csrf
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            value="{{ old('email') }}"
+                            placeholder="tu@email.com"
+                            required
+                            @error('email') aria-invalid="true" @enderror
+                        >
+                        @error('email')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
                     </div>
-                    <span class="error-message">Por favor ingresa tu contraseña</span>
-                </div>
 
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" id="remember" name="remember">
-                        <span>Recordarme</span>
-                    </label>
-                    <a href="#forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                </div>
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            placeholder="Ingresa tu contraseña"
+                            required
+                            @error('password') aria-invalid="true" @enderror
+                        >
+                        @error('password')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-                <button type="submit" class="submit-btn">Iniciar sesión</button>
-            </form>
+                    <!-- Remember Me -->
+                    <div class="checkbox-group">
+                        <div class="checkbox-wrapper">
+                            <input 
+                                type="checkbox" 
+                                id="remember" 
+                                name="remember"
+                                {{ old('remember') ? 'checked' : '' }}
+                            >
+                            <label for="remember">Recuérdame</label>
+                        </div>
+                    </div>
+
+                    <!-- Botón Submit -->
+                    <button type="submit" class="btn-primary btn-full">
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                <!-- Forgot Password y Register Links -->
+                <div class="form-footer">
+                    @if (Route::has('password.request'))
+                        <div style="margin-bottom: 10px;">
+                            <a href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
+                        </div>
+                    @endif
+
+                    <p>¿No tienes cuenta? <a href="{{ route('register') }}">Regístrate aquí</a></p>
+                </div>
+            </div>
         </div>
     </div>
-    <script src="{{ asset('js/Auth.js') }}"></script>
 </body>
 </html>

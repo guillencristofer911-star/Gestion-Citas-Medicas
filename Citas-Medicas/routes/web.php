@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\DashboardController;
 
 
 // ========== RUTAS PÚBLICAS ==========
@@ -22,4 +23,15 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/login',[LoginController::class, 'show'])->name('login');
     Route::post('/login',[LoginController::class, 'store'])->name('login.store');
+});
+
+// Rutas protegidas 
+Route::middleware('auth')->group(function () {
+    // dashboard del paciente
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    // cerrar sesión
+    Route::post('/logout', [LoginController::class, 'logout'])
+        ->name('logout');
 });
