@@ -2,7 +2,7 @@
 /* 
  * Dashboard CSS Compartido para los 3 Roles
  * Paciente, Médico, Administrador
- * Compatible con Laravel Blade
+ * Optimizado y sin duplicados
  */
 
 * {
@@ -17,7 +17,7 @@ body {
     min-height: 100vh;
 }
 
-/* ==================== CONTENEDOR PRINCIPAL ==================== */
+/* ==================== LAYOUT PRINCIPAL ==================== */
 .dashboard-container {
     display: flex;
     min-height: 100vh;
@@ -29,7 +29,7 @@ body {
     background: #0A1931;
     color: white;
     padding: 2rem 0;
-    box-shadow: 4px 0 10px rgba(0,0,0,0.3);
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.3);
     position: fixed;
     height: 100vh;
     overflow-y: auto;
@@ -396,47 +396,41 @@ tr:hover {
     background: #f9f9f9;
 }
 
-.status-select {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.status-select:focus {
-    outline: none;
-    border-color: #2A7FA7;
-    box-shadow: 0 0 5px rgba(42, 127, 167, 0.3);
-}
-
 /* ==================== BADGES Y ESTADOS ==================== */
 .status-badge {
     display: inline-block;
-    padding: 0.35rem 0.75rem;
+    padding: 6px 12px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 12px;
     font-weight: 600;
+    text-align: center;
+    min-width: 100px;
+    border: 1px solid;
 }
 
-.status-pending {
-    background: #FFF3CD;
+.status-badge.status-pending {
+    background-color: #fff3cd;
     color: #856404;
+    border-color: #ffeaa7;
 }
 
-.status-confirmed {
-    background: #D4EDDA;
+.status-badge.status-confirmed {
+    background-color: #d4edda;
     color: #155724;
+    border-color: #c3e6cb;
 }
 
-.status-attended {
-    background: #D1ECF1;
-    color: #0C5460;
+.status-badge.status-attended {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #bee5eb;
 }
 
-.status-cancelled {
-    background: #F8D7DA;
-    color: #721C24;
+/* ✅ CANCELADO SIN LÍNEA TACHADA */
+.status-badge.status-canceled {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
 }
 
 .status-active {
@@ -449,12 +443,15 @@ tr:hover {
     color: #9E0A0A;
 }
 
-.badge {
+/* ==================== SPECIALTY BADGE ==================== */
+.specialty-badge {
     display: inline-block;
-    padding: 0.35rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    padding: 5px 10px;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
 }
 
 /* ==================== FORMULARIOS ==================== */
@@ -494,21 +491,11 @@ tr:hover {
     box-shadow: 0 0 5px rgba(42, 127, 167, 0.3);
 }
 
-/* ==================== ESTADO VACÍO ==================== */
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: #999;
-}
-
-.empty-state-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-
-.empty-state p {
-    font-size: 1rem;
-    color: #999;
+.error-text {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 5px;
 }
 
 /* ==================== MODALES ==================== */
@@ -573,59 +560,120 @@ tr:hover {
     color: #333;
 }
 
-/* ==================== RESUMEN DE ESTADÍSTICAS ==================== */
-.stats-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-top: 1.5rem;
-}
-
-.summary-item h4 {
-    color: #333;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-
-.summary-item ul {
-    list-style: none;
-}
-
-.summary-item li {
-    padding: 0.75rem 0;
-    color: #666;
-    border-bottom: 1px solid #e0e0e0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.summary-item li:last-child {
-    border-bottom: none;
-}
-
-/* ==================== FILTROS ==================== */
-.agenda-filter {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.agenda-filter label {
-    font-weight: 500;
-    color: #333;
-}
-
-.agenda-filter select {
-    padding: 0.5rem 1rem;
-    border: 1px solid #ddd;
+/* ==================== ALERTAS ==================== */
+.alert {
+    padding: 15px 20px;
+    margin-bottom: 20px;
     border-radius: 8px;
-    cursor: pointer;
+    font-weight: 500;
+    font-size: 16px;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.4s ease-out;
 }
 
-/* ==================== SCROLL BAR PERSONALIZADO ==================== */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+.alert.fade-out {
+    animation: slideOut 0.5s ease-out forwards;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #28a745;
+}
+
+.alert-success::before {
+    content: "✓";
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #dc3545;
+}
+
+.alert-danger::before {
+    content: "✕";
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-color: #ffc107;
+}
+
+.alert-warning::before {
+    content: "⚠";
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-color: #17a2b8;
+}
+
+.alert-info::before {
+    content: "ℹ";
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* ==================== UTILIDADES ==================== */
+.text-muted {
+    color: #999;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* ==================== SCROLLBAR PERSONALIZADO ==================== */
 .main-content::-webkit-scrollbar {
     width: 8px;
 }
@@ -736,10 +784,6 @@ tr:hover {
         grid-template-columns: 1fr;
     }
 
-    .stats-summary {
-        grid-template-columns: 1fr;
-    }
-
     .action-buttons {
         flex-direction: column;
     }
@@ -819,27 +863,71 @@ tr:hover {
     }
 }
 
-/* ==================== UTILIDADES ==================== */
-.text-muted {
-    color: #999;
+/* ==================== PAGINACIÓN ==================== */
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
 }
 
-.text-center {
-    text-align: center;
+/* Estilos para la paginación de Laravel */
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
-
-.hidden {
-    display: none !important;
+.pagination li {
+    display: inline-block;
 }
 
-.visible {
-    display: block !important;
+.pagination a,
+.pagination span {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #2A7FA7;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.pagination a:hover {
+    background: #2A7FA7;
+    color: white;
+    border-color: #2A7FA7;
+}
+
+.pagination span.disabled {
+    color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.pagination span.active {
+    background: #2A7FA7;
+    color: white;
+    border-color: #2A7FA7;
+    font-weight: 600;
+}
+
+/* Responsive paginación */
+@media (max-width: 768px) {
+    .pagination {
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
 }

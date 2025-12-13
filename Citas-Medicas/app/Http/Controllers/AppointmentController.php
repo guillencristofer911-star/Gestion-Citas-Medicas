@@ -8,6 +8,8 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
+
+
 class AppointmentController extends Controller
 {
 
@@ -42,9 +44,9 @@ public function store (Request $request): RedirectResponse
     ]);
 
     //Redirigir con mensaje de éxito
-    return redirect()
-    ->route ('patient.appointments.index')
-    ->with ('success', 'Cita creada exitosamente y está pendiente de confirmación.');
+    return redirect() ->to (route ('patient.dashboard') . '#appointments')
+    ->with ('success', 'Cita médica solicitada exitosamente.');
+
 }
 
     //cancelar citas
@@ -61,14 +63,14 @@ public function store (Request $request): RedirectResponse
             return redirect ()
             ->back ()
             ->with ('error', 'Solo se pueden cancelar citas pendientes o confirmadas.');
+            
         }
 
         //cambiar estado a cancelada
         $appointment->status = 'canceled';
         $appointment->save();
 
-        return redirect ()
-        ->route ('patient.appointments.index')
-        ->with ('success', 'Cita cancelada exitosamente.');
+        return redirect() ->to(route ('patient.dashboard') . '#appointments')
+        ->with ('success', 'Cita médica cancelada exitosamente.');
     }
 }
