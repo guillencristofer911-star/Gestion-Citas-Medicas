@@ -6,6 +6,8 @@
     use App\Http\Controllers\DashboardController;
     use App\Http\Controllers\PatientDashboardController;
     use App\Http\Controllers\AppointmentController;
+    use App\Http\Controllers\DoctorDashboardController;
+
 
     // Rutas públicas
 
@@ -36,6 +38,10 @@
         // Dashboard para pacientes
         Route::get('/paciente/dashboard', [PatientDashboardController::class, 'index'])
             ->name('patient.dashboard');
+        // Dashboard para doctores
+        Route::get('/doctor/dashboard', [DoctorDashboardController::class, 'index'])
+            ->name('doctor.dashboard');
+
 
         // Cerrar sesión
         Route::post('/logout', [LoginController::class, 'logout'])
