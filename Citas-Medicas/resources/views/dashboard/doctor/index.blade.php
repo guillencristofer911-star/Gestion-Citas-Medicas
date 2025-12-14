@@ -210,164 +210,169 @@
                 </div>
 
                 <!-- Mi Agenda Section -->
-            <div id="schedule" class="content-section" style="display:none;">
-                <div class="section-title">⏰ Mi Agenda de Atención</div>
-                
-                <!-- Selector de Vista -->
-                <div class="schedule-header">
-                    <div class="view-toggle">
-                        <button class="toggle-btn active" data-view="daily" onclick="showScheduleView('daily')">
-                            <span class="icon">📅</span> Vista Diaria
-                        </button>
-                        <button class="toggle-btn" data-view="weekly" onclick="showScheduleView('weekly')">
-                            <span class="icon">📊</span> Vista Semanal
-                        </button>
-                    </div>
-                    <div class="schedule-controls">
-                        <input type="date" id="scheduleDate" class="date-picker" value="{{ date('Y-m-d') }}" onchange="updateScheduleView()">
-                    </div>
-                </div>
-
-                <div class="section">
-                    <!-- VISTA DIARIA -->
-                    <div id="dailyView" class="schedule-view active">
-                        <div class="daily-header">
-                            <h3>Agenda del <span id="dailyDate">{{ date('d/m/Y') }}</span></h3>
-                            <span class="current-time" id="currentTime"></span>
+                <div id="schedule" class="content-section" style="display:none;">
+                    <div class="section-title">⏰ Mi Agenda de Atención</div>
+                    
+                    <!-- Selector de Vista -->
+                    <div class="schedule-header">
+                        <div class="view-toggle">
+                            <button class="toggle-btn active" data-view="daily" onclick="showScheduleView('daily')">
+                                <span class="icon">📅</span> Vista Diaria
+                            </button>
+                            <button class="toggle-btn" data-view="weekly" onclick="showScheduleView('weekly')">
+                                <span class="icon">📊</span> Vista Semanal
+                            </button>
                         </div>
-
-                        <div class="timeline-container">
-                            <div class="current-time-indicator" id="currentTimeIndicator"></div>
-
-                            @forelse($dailySchedule as $timeSlot)
-                                <div class="timeline-slot {{ $timeSlot['status'] === 'booked' ? 'booked' : 'available' }}" data-time="{{ $timeSlot['start_time'] }}">
-                                    <div class="slot-time">
-                                        <span class="time-label">{{ $timeSlot['start_time'] }} - {{ $timeSlot['end_time'] }}</span>
-                                    </div>
-                                    <div class="slot-content">
-                                        @if($timeSlot['status'] === 'booked' && isset($timeSlot['appointment']) && $timeSlot['appointment'])\n                                <div class="slot-appointment">
-                                                <strong>{{ $timeSlot['appointment']->patient->name }}</strong>\n                                    <p>{{ $timeSlot['appointment']->reason ?? 'Sin motivo especificado' }}</p>\n                                    <span class="status-badge status-{{ $timeSlot['appointment']->status }}">
-                                                    {{ ucfirst($timeSlot['appointment']->status) }}
-                                                </span>
-                                            </div>
-                                        @else\n                                <div class="slot-available">
-                                                <span>✓ Disponible</span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            @empty\n                    <div class="timeline-empty">
-                                    <p>No hay información de agenda para este día</p>
-                                </div>
-                            @endforelse
-                        </div>
-
-                        <div class="daily-summary">
-                            <div class="summary-card">
-                                <span class="summary-label">Citas Hoy:</span>
-                                <span class="summary-value">{{ $todayAppointments ?? 0 }}</span>
-                            </div>
-                            <div class="summary-card">
-                                <span class="summary-label">Disponibilidad:</span>
-                                <span class="summary-value">{{ $todayAvailability ?? '0 hrs' }}</span>
-                            </div>
-                            <div class="summary-card">
-                                <span class="summary-label">Estado:</span>
-                                <span class="summary-value">
-                                    <span class="status-badge status-confirmed">Activo</span>
-                                </span>
-                            </div>
+                        <div class="schedule-controls">
+                            <input type="date" id="scheduleDate" class="date-picker" value="{{ date('Y-m-d') }}" onchange="updateScheduleView()">
                         </div>
                     </div>
 
-                    <!-- VISTA SEMANAL -->
-                    <div id="weeklyView" class="schedule-view" style="display:none;">
-                        <div class="weekly-header">
-                            <h3>Agenda de la Semana</h3>
-                        </div>
+                    <div class="section">
+                        <!-- VISTA DIARIA -->
+                        <div id="dailyView" class="schedule-view active">
+                            <div class="daily-header">
+                                <h3>Agenda del <span id="dailyDate">{{ date('d/m/Y') }}</span></h3>
+                                <span class="current-time" id="currentTime"></span>
+                            </div>
 
-                        <div class="weekly-grid">
-                            @foreach($weeklySchedule as $day)
-                                <div class="day-card {{ $day['status'] === 'inactive' ? 'inactive' : '' }}" data-day="{{ $day['date'] }}">
-                                    <div class="day-header">
-                                        <div class="day-name">{{ $day['day_name'] }}</div>
-                                        <div class="day-date">{{ $day['date_short'] }}</div>
-                                    </div>
-                                    
-                                    <div class="day-content">
-                                        @if($day['status'] === 'active')
-                                            <div class="day-hours">
-                                                <span class="hours-label">{{ $day['start_time'] }} - {{ $day['end_time'] }}</span>
-                                            </div>
-                                            
-                                            <div class="day-stats">
-                                                <div class="stat-item">
-                                                    <span class="stat-icon">📅</span>
-                                                    <span class="stat-text">{{ $day['appointments_count'] }} citas</span>
+                            <div class="timeline-container">
+                                <div class="current-time-indicator" id="currentTimeIndicator"></div>
+
+                                @forelse($dailySchedule as $timeSlot)
+                                    <div class="timeline-slot {{ $timeSlot['status'] === 'booked' ? 'booked' : 'available' }}" data-time="{{ $timeSlot['start_time'] }}">
+                                        <div class="slot-time">
+                                            <span class="time-label">{{ $timeSlot['start_time'] }} - {{ $timeSlot['end_time'] }}</span>
+                                        </div>
+                                        <div class="slot-content">
+                                            @if($timeSlot['status'] === 'booked' && isset($timeSlot['appointment']) && $timeSlot['appointment'])
+                                                <div class="slot-appointment">
+                                                    <strong>{{ $timeSlot['appointment']->patient->name }}</strong>
+                                                    <p>{{ $timeSlot['appointment']->reason ?? 'Sin motivo especificado' }}</p>
+                                                    <span class="status-badge status-{{ $timeSlot['appointment']->status }}">
+                                                        {{ ucfirst($timeSlot['appointment']->status) }}
+                                                    </span>
                                                 </div>
-                                                <div class="stat-item">
-                                                    <span class="stat-icon">⏱️</span>
-                                                    <span class="stat-text">{{ $day['available_hours'] }} hrs libres</span>
+                                            @else
+                                                <div class="slot-available">
+                                                    <span>✓ Disponible</span>
                                                 </div>
-                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="timeline-empty">
+                                        <p>No hay información de agenda para este día</p>
+                                    </div>
+                                @endforelse
+                            </div>
 
-                                            <div class="appointments-preview">
-                                                @forelse($day['appointments'] as $apt)
-                                                    <div class="apt-preview">
-                                                        <span class="apt-time">{{ $apt['time'] }}</span>
-                                                        <span class="apt-patient">{{ substr($apt['patient'], 0, 15) }}...</span>
+                            <div class="daily-summary">
+                                <div class="summary-card">
+                                    <span class="summary-label">Citas Hoy:</span>
+                                    <span class="summary-value">{{ $todayAppointments ?? 0 }}</span>
+                                </div>
+                                <div class="summary-card">
+                                    <span class="summary-label">Disponibilidad:</span>
+                                    <span class="summary-value">{{ $todayAvailability ?? '0 hrs' }}</span>
+                                </div>
+                                <div class="summary-card">
+                                    <span class="summary-label">Estado:</span>
+                                    <span class="summary-value">
+                                        <span class="status-badge status-confirmed">Activo</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- VISTA SEMANAL -->
+                        <div id="weeklyView" class="schedule-view" style="display:none;">
+                            <div class="weekly-header">
+                                <h3>Agenda de la Semana</h3>
+                            </div>
+
+                            <div class="weekly-grid">
+                                @foreach($weeklySchedule as $day)
+                                    <div class="day-card {{ $day['status'] === 'inactive' ? 'inactive' : '' }}" data-day="{{ $day['date'] }}">
+                                        <div class="day-header">
+                                            <div class="day-name">{{ $day['day_name'] }}</div>
+                                            <div class="day-date">{{ $day['date_short'] }}</div>
+                                        </div>
+                                        
+                                        <div class="day-content">
+                                            @if($day['status'] === 'active')
+                                                <div class="day-hours">
+                                                    <span class="hours-label">{{ $day['start_time'] }} - {{ $day['end_time'] }}</span>
+                                                </div>
+                                                
+                                                <div class="day-stats">
+                                                    <div class="stat-item">
+                                                        <span class="stat-icon">📅</span>
+                                                        <span class="stat-text">{{ $day['appointments_count'] }} citas</span>
                                                     </div>
-                                                @empty
-                                                    <p class="no-apts">Sin citas</p>
-                                                @endforelse
-                                            </div>
+                                                    <div class="stat-item">
+                                                        <span class="stat-icon">⏱️</span>
+                                                        <span class="stat-text">{{ $day['available_hours'] }} hrs libres</span>
+                                                    </div>
+                                                </div>
 
-                                            <span class="day-status status-badge status-confirmed">Activo</span>
-                                        @else
-                                            <div class="day-closed">
-                                                <span class="closed-icon">🚫</span>
-                                                <span class="closed-text">Inactivo</span>
-                                            </div>
-                                            <span class="day-status status-badge status-canceled">No labora</span>
-                                        @endif
+                                                <div class="appointments-preview">
+                                                    @forelse($day['appointments'] as $apt)
+                                                        <div class="apt-preview">
+                                                            <span class="apt-time">{{ $apt['time'] }}</span>
+                                                            <span class="apt-patient">{{ substr($apt['patient'], 0, 15) }}...</span>
+                                                        </div>
+                                                    @empty
+                                                        <p class="no-apts">Sin citas</p>
+                                                    @endforelse
+                                                </div>
+
+                                                <span class="day-status status-badge status-confirmed">Activo</span>
+                                            @else
+                                                <div class="day-closed">
+                                                    <span class="closed-icon">🚫</span>
+                                                    <span class="closed-text">Inactivo</span>
+                                                </div>
+                                                <span class="day-status status-badge status-canceled">No labora</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="weekly-stats">
+                                <div class="stat-box">
+                                    <div class="stat-box-icon">📅</div>
+                                    <div class="stat-box-content">
+                                        <h4>Citas de la Semana</h4>
+                                        <p class="stat-box-number">{{ $weeklyAppointments ?? 0 }}</p>
                                     </div>
                                 </div>
-                            @endforeach
-                        </div>
-
-                        <div class="weekly-stats">
-                            <div class="stat-box">
-                                <div class="stat-box-icon">📅</div>
-                                <div class="stat-box-content">
-                                    <h4>Citas de la Semana</h4>
-                                    <p class="stat-box-number">{{ $weeklyAppointments ?? 0 }}</p>
+                                <div class="stat-box">
+                                    <div class="stat-box-icon">⏰</div>
+                                    <div class="stat-box-content">
+                                        <h4>Horas de Atención</h4>
+                                        <p class="stat-box-number">{{ $weeklyHours ?? '0' }} hrs</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-box-icon">⏰</div>
-                                <div class="stat-box-content">
-                                    <h4>Horas de Atención</h4>
-                                    <p class="stat-box-number">{{ $weeklyHours ?? '0' }} hrs</p>
+                                <div class="stat-box">
+                                    <div class="stat-box-icon">✓</div>
+                                    <div class="stat-box-content">
+                                        <h4>Confirmadas</h4>
+                                        <p class="stat-box-number">{{ $weeklyConfirmed ?? 0 }}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-box-icon">✓</div>
-                                <div class="stat-box-content">
-                                    <h4>Confirmadas</h4>
-                                    <p class="stat-box-number">{{ $weeklyConfirmed ?? 0 }}</p>
-                                </div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-box-icon">⏳</div>
-                                <div class="stat-box-content">
-                                    <h4>Pendientes</h4>
-                                    <p class="stat-box-number">{{ $weeklyPending ?? 0 }}</p>
+                                <div class="stat-box">
+                                    <div class="stat-box-icon">⏳</div>
+                                    <div class="stat-box-content">
+                                        <h4>Pendientes</h4>
+                                        <p class="stat-box-number">{{ $weeklyPending ?? 0 }}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
             </div>
         </div>
 
@@ -516,8 +521,6 @@
                 });
             }
 
-
-
             // Cerrar sesión
             function logout() {
                 if (confirm('¿Deseas cerrar sesión?')) {
@@ -533,71 +536,72 @@
                     closeModal();
                 }
             };
+            
             let currentView = 'daily';
 
-        function showScheduleView(view) {
-            currentView = view;
-            
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.closest('.toggle-btn').classList.add('active');
-            
-            document.getElementById('dailyView').style.display = view === 'daily' ? 'block' : 'none';
-            document.getElementById('weeklyView').style.display = view === 'weekly' ? 'block' : 'none';
-            
-            if (view === 'daily') {
-                updateCurrentTime();
-                initDailyTimeline();
-            }
-        }
-
-        function updateScheduleView() {
-            const selectedDate = document.getElementById('scheduleDate').value;
-            console.log('Actualizar agenda para:', selectedDate);
-            location.reload();
-        }
-
-        function updateCurrentTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('currentTime').textContent = 'Hora actual: ' + timeString;
-            updateCurrentTimeIndicator();
-        }
-
-        function updateCurrentTimeIndicator() {
-            const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const totalMinutes = hours * 60 + minutes;
-            const percentFromStart = ((totalMinutes - (8 * 60)) / 540) * 100;
-            
-            const indicator = document.getElementById('currentTimeIndicator');
-            if (indicator && percentFromStart >= 0 && percentFromStart <= 100) {
-                indicator.style.top = percentFromStart + '%';
-                indicator.style.display = 'block';
-            }
-        }
-
-        function initDailyTimeline() {
-            const timeSlots = document.querySelectorAll('.timeline-slot');
-            timeSlots.forEach(slot => {
-                const slotTime = slot.getAttribute('data-time');
-                const now = new Date();
-                const currentHour = String(now.getHours()).padStart(2, '0');
+            function showScheduleView(view) {
+                currentView = view;
                 
-                if (slotTime.startsWith(currentHour)) {
-                    slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.querySelectorAll('.toggle-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.closest('.toggle-btn').classList.add('active');
+                
+                document.getElementById('dailyView').style.display = view === 'daily' ? 'block' : 'none';
+                document.getElementById('weeklyView').style.display = view === 'weekly' ? 'block' : 'none';
+                
+                if (view === 'daily') {
+                    updateCurrentTime();
+                    initDailyTimeline();
                 }
+            }
+
+            function updateScheduleView() {
+                const selectedDate = document.getElementById('scheduleDate').value;
+                console.log('Actualizar agenda para:', selectedDate);
+                location.reload();
+            }
+
+            function updateCurrentTime() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('currentTime').textContent = 'Hora actual: ' + timeString;
+                updateCurrentTimeIndicator();
+            }
+
+            function updateCurrentTimeIndicator() {
+                const now = new Date();
+                const hours = now.getHours();
+                const minutes = now.getMinutes();
+                const totalMinutes = hours * 60 + minutes;
+                const percentFromStart = ((totalMinutes - (8 * 60)) / 540) * 100;
+                
+                const indicator = document.getElementById('currentTimeIndicator');
+                if (indicator && percentFromStart >= 0 && percentFromStart <= 100) {
+                    indicator.style.top = percentFromStart + '%';
+                    indicator.style.display = 'block';
+                }
+            }
+
+            function initDailyTimeline() {
+                const timeSlots = document.querySelectorAll('.timeline-slot');
+                timeSlots.forEach(slot => {
+                    const slotTime = slot.getAttribute('data-time');
+                    const now = new Date();
+                    const currentHour = String(now.getHours()).padStart(2, '0');
+                    
+                    if (slotTime.startsWith(currentHour)) {
+                        slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                setInterval(updateCurrentTime, 60000);
+                updateCurrentTime();
             });
-        }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            setInterval(updateCurrentTime, 60000);
-            updateCurrentTime();
-        });
-
-        setInterval(updateCurrentTimeIndicator, 300000);
+            setInterval(updateCurrentTimeIndicator, 300000);
         </script>
     </body>
 </html>
