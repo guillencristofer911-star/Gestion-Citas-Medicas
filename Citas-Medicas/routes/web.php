@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentControll
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 
-// ====== PÚBLICAS ======
+// ====== PÚBlICAS ======
 Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
@@ -69,6 +69,7 @@ Route::middleware(['auth', 'checkRole:admin'])->group(function () {
         Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])->name('schedules.destroy');
         
         // Users
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 });
