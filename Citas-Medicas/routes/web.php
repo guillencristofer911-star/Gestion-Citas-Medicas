@@ -1,63 +1,51 @@
 <?php
 
-    use Illuminate\Support\Facades\Route;
-    use App\Http\Controllers\Auth\LoginController;
-    use App\Http\Controllers\Auth\RegisterController;
-    use App\Http\Controllers\DashboardController;
-    use App\Http\Controllers\PatientDashboardController;
-    use App\Http\Controllers\AppointmentController;
-    use App\Http\Controllers\DoctorDashboardController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PatientDashboardController;
+use App\Http\Controllers\DoctorDashboardController;
+use App\Http\Controllers\AppointmentController;
 
+// PÚBLICAS
+Route::get('/', function () {
+    return view('welcome');
+})->name('welcome');
 
-    // Rutas públicas
+// AUTH GUEST (para no autenticados)
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegisterController::class, 'show'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+    Route::get('/login', [LoginController::class, 'show'])->name('login');
+    Route::post('/login', [LoginController::class, 'store'])->name('login.store');
+});
 
-    // Página de bienvenida (accesible para cualquier visitante)
-    Route::get('/', function () {
-        return view('welcome');
-    })->name('welcome');
+// AUTH REQUIRED (cualquier usuario autenticado)
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
 
+// ====== PACIENTES ======
+Route::middleware(['auth', 'checkRole:patient'])->prefix('paciente')->name('patient.')->group(function () {
+    Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
+});
 
-    // Autenticación — accesible solo por usuarios invitados
-    Route::middleware('guest')->group(function () {
-        // Registro
-        Route::get('/register', [RegisterController::class, 'show'])->name('register');
-        Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+// ====== MÉDICOS ======
+Route::middleware(['auth', 'checkRole:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
+    Route::get('/dashboard', [DoctorDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/appointments/{appointment}/update-status', 
+        [DoctorDashboardController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
+});
 
-        // Inicio de sesión
-        Route::get('/login', [LoginController::class, 'show'])->name('login');
-        Route::post('/login', [LoginController::class, 'store'])->name('login.store');
-    });
+// ====== ADMIN ======
+Route::middleware(['auth', 'checkRole:admin'])->prefix('admin')->name('admin.')->group(function () {
 
+});
 
-    // Rutas protegidas — requieren autenticación
-    Route::middleware('auth')->group(function () {
-        // Dashboard principal (redirige según rol)
-        Route::get('/dashboard', [DashboardController::class, 'index'])
-            ->name('dashboard');
-
-        // Dashboard para pacientes
-        Route::get('/paciente/dashboard', [PatientDashboardController::class, 'index'])
-            ->name('patient.dashboard');
-        // Dashboard para doctores
-        Route::prefix('doctor')->middleware('auth')->group(function () {
-            Route::get('/dashboard', [DoctorDashboardController::class, 'index'])
-                ->name('doctor.dashboard');
-            
-            Route::post('/appointments/{appointment}/update-status', 
-                [DoctorDashboardController::class, 'updateAppointmentStatus'])
-                ->name('doctor.appointments.update-status');
-        });
-
-
-
-        // Cerrar sesión
-        Route::post('/logout', [LoginController::class, 'logout'])
-            ->name('logout');
-    });
-
-    // Rutas relacionadas con citas médicas
-    Route::post('/citas', [AppointmentController::class, 'store'])
-        ->name('appointments.store');
-
-    Route::post('/citas/{appointment}/cancel', [AppointmentController::class, 'cancel'])
-        ->name('appointments.cancel');
+// ====== CITAS (sin protección de rol, solo autenticado) ======
+Route::middleware('auth')->group(function () {
+    Route::post('/citas', [AppointmentController::class, 'store'])->name('appointments.store');
+    Route::post('/citas/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+});
