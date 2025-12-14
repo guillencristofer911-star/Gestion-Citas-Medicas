@@ -35,16 +35,20 @@
                 </div>
             </div>
 
-            <div class="user-profile">
-                <div class="user-info">
-                    <div class="user-avatar">👨‍⚕️</div>
-                    <div>
-                        <h4>Dr. Carlos Martínez</h4>
-                        <p>Médico</p>
-                    </div>
-                </div>
-                <button class="logout-btn-sidebar" onclick="logout()">Cerrar Sesión</button>
-            </div>
+<div class="user-profile">
+    <div class="user-info">
+        <div class="user-avatar">👨‍⚕️</div>
+        <div>
+            <h4>Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}</h4>
+            <p>{{ $userRole }}</p>
+        </div>
+    </div>
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="logout-btn-sidebar">Cerrar Sesión</button>
+    </form>
+</div>
+
         </div>
 
         <!-- Main Content -->
@@ -55,156 +59,151 @@
 
             <!-- Dashboard Section -->
             <div id="dashboard" class="content-section">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon blue">📅</div>
-                        <div class="stat-content">
-                            <h3>Citas Hoy</h3>
-                            <p class="stat-number">4</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green">✓</div>
-                        <div class="stat-content">
-                            <h3>Citas Confirmadas</h3>
-                            <p class="stat-number">12</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon orange">⏳</div>
-                        <div class="stat-content">
-                            <h3>Pendientes de Confirmar</h3>
-                            <p class="stat-number">2</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">📋</div>
-                        <div class="stat-content">
-                            <h3>Total Este Mes</h3>
-                            <p class="stat-number">28</p>
-                        </div>
-                    </div>
-                </div>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">📅</div>
+        <div class="stat-content">
+            <h3>Citas Próximas</h3>
+            <p class="stat-number">{{ $upcomingAppointments }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">✓</div>
+        <div class="stat-content">
+            <h3>Citas Confirmadas</h3>
+            <p class="stat-number">{{ $confirmedAppointments }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">⏳</div>
+        <div class="stat-content">
+            <h3>Pendientes</h3>
+            <p class="stat-number">{{ $pendingAppointments }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon purple">📋</div>
+        <div class="stat-content">
+            <h3>Total Citas</h3>
+            <p class="stat-number">{{ $totalAppointments }}</p>
+        </div>
+    </div>
+</div>
 
-                <div class="section-title">📋 Citas de Hoy</div>
-                <div class="section">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Paciente</th>
-                                <th>Hora</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Juan Pérez</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status-badge status-confirmed">Confirmada</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('Juan Pérez', '10:00 AM')">Cambiar Estado</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>María González</td>
-                                <td>11:30 AM</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('María González', '11:30 AM')">Cambiar Estado</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Roberto López</td>
-                                <td>02:00 PM</td>
-                                <td><span class="status-badge status-confirmed">Confirmada</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('Roberto López', '02:00 PM')">Cambiar Estado</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Ana Martínez</td>
-                                <td>03:30 PM</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('Ana Martínez', '03:30 PM')">Cambiar Estado</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+
+<div class="section-title">📋 Próximas Citas</div>
+<div class="section">
+    <table>
+        <thead>
+            <tr>
+                <th>Paciente</th>
+                <th>Fecha y Hora</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($upcomingList as $appointment)
+            <tr>
+                <td>{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
+                <td>{{ \Carbon\Carbon::parse($appointment->appointment_date_time)->format('d/m/Y H:i A') }}</td>
+                <td>
+                    @if($appointment->status === 'confirmed')
+                        <span class="status-badge status-confirmed">Confirmada</span>
+                    @elseif($appointment->status === 'pending')
+                        <span class="status-badge status-pending">Pendiente</span>
+                    @elseif($appointment->status === 'attended')
+                        <span class="status-badge status-attended">Atendida</span>
+                    @else
+                        <span class="status-badge status-cancelled">Cancelada</span>
+                    @endif
+                </td>
+                <td>
+                    <button class="btn btn-primary btn-sm" 
+                            onclick="openStatusModal('{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}', '{{ \Carbon\Carbon::parse($appointment->appointment_date_time)->format('H:i A') }}', {{ $appointment->id }})">
+                        Cambiar Estado
+                    </button>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 2rem;">
+                    No hay citas próximas programadas
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+    
+    <!-- Paginación -->
+    <div style="margin-top: 1rem;">
+        {{ $upcomingList->links() }}
+    </div>
+</div>
+
             </div>
 
-            <!-- Mis Citas Section -->
-            <div id="appointments" class="content-section" style="display:none;">
-                <div class="section-title">📅 Citas Asignadas</div>
-                <div class="section">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Paciente</th>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Motivo</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Juan Pérez</td>
-                                <td>11/12/2025</td>
-                                <td>10:00 AM</td>
-                                <td>Revisión cardiovascular</td>
-                                <td><span class="status-badge status-confirmed">Confirmada</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('Juan Pérez', '10:00 AM')">Actualizar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>María González</td>
-                                <td>12/12/2025</td>
-                                <td>02:30 PM</td>
-                                <td>Consulta general</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('María González', '02:30 PM')">Actualizar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Roberto López</td>
-                                <td>13/12/2025</td>
-                                <td>11:00 AM</td>
-                                <td>Control de presión</td>
-                                <td><span class="status-badge status-attended">Atendida</span></td>
-                                <td>
-                                    <button class="btn btn-secondary btn-sm" disabled>Completada</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Ana Martínez</td>
-                                <td>15/12/2025</td>
-                                <td>03:00 PM</td>
-                                <td>Chequeo anual</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('Ana Martínez', '03:00 PM')">Actualizar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Carlos Ruiz</td>
-                                <td>16/12/2025</td>
-                                <td>10:30 AM</td>
-                                <td>Seguimiento</td>
-                                <td><span class="status-badge status-confirmed">Confirmada</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="openStatusModal('Carlos Ruiz', '10:30 AM')">Actualizar</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<!-- Mis Citas Section -->
+<div id="appointments" class="content-section" style="display:none;">
+    <div class="section-title">📅 Todas Mis Citas</div>
+    <div class="section">
+        <table>
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Motivo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($allAppointments as $appointment)
+                <tr>
+                    <td>{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
+                    <td>{{ \Carbon\Carbon::parse($appointment->appointment_date_time)->format('d/m/Y') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($appointment->appointment_date_time)->format('H:i A') }}</td>
+                    <td>{{ $appointment->reason ?? 'No especificado' }}</td>
+                    <td>
+                        @if($appointment->status === 'confirmed')
+                            <span class="status-badge status-confirmed">Confirmada</span>
+                        @elseif($appointment->status === 'pending')
+                            <span class="status-badge status-pending">Pendiente</span>
+                        @elseif($appointment->status === 'attended')
+                            <span class="status-badge status-attended">Atendida</span>
+                        @else
+                            <span class="status-badge status-cancelled">Cancelada</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($appointment->status !== 'attended' && $appointment->status !== 'cancelled')
+                            <button class="btn btn-primary btn-sm" 
+                                    onclick="openStatusModal('{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}', '{{ \Carbon\Carbon::parse($appointment->appointment_date_time)->format('H:i A') }}', {{ $appointment->id }})">
+                                Actualizar
+                            </button>
+                        @else
+                            <button class="btn btn-secondary btn-sm" disabled>Completada</button>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                        No tienes citas registradas
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+        
+        <!-- Paginación -->
+        <div style="margin-top: 1rem;">
+            {{ $allAppointments->links() }}
+        </div>
+    </div>
+</div>
+
 
             <!-- Mi Agenda Section -->
             <div id="schedule" class="content-section" style="display:none;">
@@ -277,12 +276,14 @@
                 <h2>Cambiar Estado de Cita</h2>
                 <button class="close-modal" onclick="closeModal()">&times;</button>
             </div>
-            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
-                <p><strong>Paciente:</strong> <span id="patientName"></span></p>
-                <p><strong>Hora:</strong> <span id="appointmentTime"></span></p>
-            </div>
-            <form onsubmit="updateStatus(event)">
-                <div class="form-group">
+<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+    <p><strong>Paciente:</strong> <span id="patientName"></span></p>
+    <p><strong>Hora:</strong> <span id="appointmentTime"></span></p>
+</div>
+<form onsubmit="updateStatus(event)">
+    <input type="hidden" id="appointmentId" value="">
+    <div class="form-group">
+
                     <label>Seleccionar Nuevo Estado</label>
                     <select id="statusSelect" required>
                         <option value="">-- Selecciona un estado --</option>
