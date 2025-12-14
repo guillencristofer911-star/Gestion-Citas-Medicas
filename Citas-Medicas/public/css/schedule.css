@@ -281,6 +281,7 @@
     cursor: pointer;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .day-card:hover {
@@ -325,6 +326,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    min-width: 0;
 }
 
 /* Horas del Día */
@@ -333,12 +335,14 @@
     padding: 0.75rem;
     border-radius: 6px;
     border-left: 3px solid #2A7FA7;
+    overflow: hidden;
 }
 
 .hours-label {
     color: #2A7FA7;
     font-weight: 600;
     font-size: 0.95rem;
+    white-space: nowrap;
 }
 
 /* Estadísticas del Día */
@@ -346,6 +350,7 @@
     display: flex;
     gap: 0.75rem;
     margin: 0.5rem 0;
+    flex-wrap: wrap;
 }
 
 .stat-item {
@@ -355,17 +360,22 @@
     font-size: 0.85rem;
     color: #666;
     flex: 1;
+    min-width: 0;
 }
 
 .stat-icon {
     font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .stat-text {
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Vista previa de citas - CORREGIDO */
+/* Vista previa de citas */
 .appointments-preview {
     background: #f8fafb;
     padding: 0.75rem;
@@ -441,6 +451,7 @@
     align-self: flex-start;
     margin-top: auto;
     margin-top: 0.75rem;
+    flex-shrink: 0;
 }
 
 /* ===== ESTADÍSTICAS SEMANALES ===== */
@@ -472,6 +483,7 @@
     font-size: 2rem;
     min-width: 50px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .stat-box-content h4 {
