@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreAppointmentRequest;
 
 
 
@@ -20,34 +21,28 @@ class AppointmentController extends Controller
 
 //guarda una neva cita, recibe datos del formulario y guarda en BD
 
-public function store (Request $request): RedirectResponse
+public function store (StoreAppointmentRequest $request): RedirectResponse
 {
-    //validar datos
-    $validate = $request->validate([
-        'doctor_id' => 'required|exists:doctors,id',
-        'appointment_date' => 'required|date|after:today',
-        'appointment_time' => 'required|date_format:H:i',
-        'consultation_reason'=> 'required|string|min:10|max:500',
 
-    ]);
-
+    
     //combinar fecha y hora
-    $appointment_date_time = $validate['appointment_date'] . ' ' . $validate['appointment_time'];
+    $appointment_date_time = $request->appointment_date . ' ' . $request->appointment_time;
 
     //crear nueva cita
     Appointment::create([
         'patient_id' => Auth::id(),
-        'doctor_id' => $validate['doctor_id'],
+        'doctor_id' => $request->doctor_id,
         'appointment_date_time' => $appointment_date_time,
-        'description' => $validate['consultation_reason'],
+        'description' => $request->consultation_reason,
         'status' => 'pending',
     ]);
 
     //Redirigir con mensaje de éxito
     return redirect() ->to (route ('patient.dashboard') . '#appointments')
     ->with ('success', 'Cita médica solicitada exitosamente.');
-
 }
+
+
 
     //cancelar citas
     public function cancel(Appointment $appointment): RedirectResponse
