@@ -40,13 +40,13 @@ class DoctorDashboardController extends Controller
             ->where('appointment_date_time', '>=', now())
             ->with('patient')
             ->orderBy('appointment_date_time', 'asc')
-            ->paginate(10);
+            ->paginate(15);
 
         // Historial de citas paginado
         $allAppointments = $doctor->appointments()
             ->with('patient')
             ->orderBy('appointment_date_time', 'desc')
-            ->paginate(10);
+            ->paginate(20);
         
         // Traducción de roles
         $roleTranslations = [
@@ -82,7 +82,7 @@ class DoctorDashboardController extends Controller
             ->whereBetween('appointment_date_time', [$startOfWeek, $endOfWeek])
             ->where('status', 'pending')
             ->count();
-        $weeklyHours = 45; // Lunes-Jueves (4x9) + Viernes (1x8) = 44 horas
+        $weeklyHours = 45;
 
         return view('dashboard.doctor.index', [
             'user' => $user,
@@ -95,7 +95,6 @@ class DoctorDashboardController extends Controller
             'upcomingAppointments' => $upcomingAppointments,
             'upcomingList' => $upcomingList,
             'allAppointments' => $allAppointments,
-            // Nuevos datos para Mi Agenda (RF-13)
             'dailySchedule' => $dailySchedule,
             'todayAppointments' => $todayAppointments,
             'todayAvailability' => $todayAvailability,

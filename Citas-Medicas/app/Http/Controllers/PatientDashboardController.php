@@ -41,13 +41,13 @@ class PatientDashboardController extends Controller
         ->where('appointment_date_time', '>=', now())
         ->with('doctor', 'doctor.user')
         ->orderBy('appointment_date_time', 'asc')
-        ->paginate(10);
+        ->paginate(15);
 
     //Historial de citas paginado
     $allAppointments = Appointment::where('patient_id', $user->id)
             ->with('doctor', 'doctor.user')
             ->orderBy('appointment_date_time', 'desc')
-            ->paginate(10);
+            ->paginate(20);
 
     //Traducción de roles
 
