@@ -268,7 +268,11 @@
                                     </td>
                                     <td>
                                         @if($user->id !== auth()->id())
-                                            <button class="btn btn-danger btn-sm" onclick="deactivateUser({{ $user->id }})">Desactivar</button>
+                                            @if($user->active ?? true)
+                                                <button class="btn btn-danger btn-sm" onclick="deactivateUser({{ $user->id }})">Desactivar</button>
+                                            @else
+                                                <button class="btn btn-success btn-sm" onclick="activateUser({{ $user->id }})">Activar</button>
+                                            @endif
                                         @else
                                             <span style="color: #999;">Tu usuario</span>
                                         @endif
@@ -426,11 +430,8 @@
             });
         }
 
-        function activateDoctor(doctorId) {
-            if(confirm('¿Activar este médico?')) {
-                // Para activar, hacemos una actualización con status activo
-                // Usamos PUT similar al edit, pero solo enviamos el estado
-                
+        function deactivateDoctor(doctorId) {
+            if(confirm('¿Desactivar este médico?')) {
                 fetch(`/admin/doctors/${doctorId}`, {
                     method: 'PUT',
                     headers: {
@@ -439,7 +440,35 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        _method: 'PUT',
+                        active: false
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        showAlert(data.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error al desactivar el médico', 'error');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function activateDoctor(doctorId) {
+            if(confirm('¿Activar este médico?')) {
+                fetch(`/admin/doctors/${doctorId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
                         active: true
                     })
                 })
@@ -457,11 +486,6 @@
                     console.error('Error:', error);
                 });
             }
-        }
-
-
-        function activateDoctor(doctorId) {
-            alert('Activar médico: ' + doctorId);
         }
 
         // =================== CITAS ===================
@@ -485,9 +509,6 @@
                 .then(data => {
                     if(data.success) {
                         showAlert(data.message, 'success');
-                        // Recargar tabla de usuarios
-                        const row = document.querySelector(`tr[data-user-id="${userId}"]`);
-                        if(row) row.remove();
                         setTimeout(() => location.reload(), 1500);
                     } else {
                         showAlert(data.message, 'error');
@@ -500,6 +521,34 @@
             }
         }
 
+        function activateUser(userId) {
+            if(confirm('¿Activar este usuario?')) {
+                fetch(`/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        active: true
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        showAlert('Usuario activado correctamente', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error al activar el usuario', 'error');
+                    console.error('Error:', error);
+                });
+            }
+        }
 
         // =================== MODAL ===================
 
