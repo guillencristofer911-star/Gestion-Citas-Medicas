@@ -1,0 +1,219 @@
+/* ==================== ESTILOS PERSONALIZADOS PARA PAGINACIÓN ==================== */
+/* 
+ * Estilos personalizados para componente de paginación de Laravel
+ * Se aplica a todos los dashboards
+ */
+
+/* Contenedor de paginación */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+}
+
+/* Elemento individual de paginación */
+.pagination li {
+    display: flex;
+}
+
+/* Links de paginación */
+.pagination a,
+.pagination span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #666;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: white;
+}
+
+/* Links activos (clickeables) */
+.pagination a:hover {
+    border-color: #2A7FA7;
+    color: #2A7FA7;
+    background: #f0f7fb;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(42, 127, 167, 0.1);
+}
+
+/* Página actual */
+.pagination .active span {
+    background: #2A7FA7;
+    color: white;
+    border-color: #2A7FA7;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(42, 127, 167, 0.2);
+}
+
+/* Links deshabilitados (prev/next no disponibles) */
+.pagination .disabled span {
+    color: #ccc;
+    border-color: #e0e0e0;
+    cursor: not-allowed;
+    background: #fafafa;
+}
+
+/* Separador de puntos suspensivos */
+.pagination li span.dots {
+    border: none;
+    cursor: default;
+    color: #999;
+    padding: 0.5rem 0.5rem;
+}
+
+.pagination li span.dots:hover {
+    background: white;
+    color: #999;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Links anteriores/siguientes con texto */
+.pagination a[rel="prev"]::before {
+    content: '←';
+    margin-right: 0.5rem;
+}
+
+.pagination a[rel="next"]::after {
+    content: '→';
+    margin-left: 0.5rem;
+}
+
+/* Para los spans de "Previous" y "Next" deshabilitados */
+.pagination .prev.disabled span::before,
+.pagination .next.disabled span::before {
+    content: none;
+}
+
+/* Responsivo para móvil */
+@media (max-width: 768px) {
+    .pagination {
+        gap: 0.35rem;
+    }
+
+    .pagination a,
+    .pagination span {
+        min-width: 36px;
+        height: 36px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination {
+        gap: 0.25rem;
+    }
+
+    .pagination a,
+    .pagination span {
+        min-width: 32px;
+        height: 32px;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    /* Ocultar números de página en móvil, mostrar solo prev/next */
+    .pagination li:not(.prev):not(.next):not(.active) a {
+        display: none;
+    }
+
+    /* Mostrar puntos suspensivos en móvil */
+    .pagination li span.dots {
+        display: flex;
+        padding: 0.3rem 0.25rem;
+    }
+}
+
+/* ==================== ESTILOS PARA BLADE COMPONENT ==================== */
+
+/* Contenedor con información de paginación */
+.pagination-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.pagination-info .showing {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.pagination-info .showing strong {
+    color: #2A7FA7;
+    font-weight: 600;
+}
+
+/* Animación suave para cambios de página */
+@keyframes fadeInPage {
+    from {
+        opacity: 0.5;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pagination-content {
+    animation: fadeInPage 0.3s ease;
+}
+
+/* ==================== COLORES ALTERNATIVOS ==================== */
+
+/* Para dashboard de admin */
+.admin-dashboard .pagination a:hover,
+.admin-dashboard .pagination .active span {
+    border-color: #2A7FA7;
+    background: #2A7FA7;
+    color: white;
+}
+
+.admin-dashboard .pagination a:hover {
+    background: #f0f7fb;
+    color: #2A7FA7;
+}
+
+/* Para dashboard de doctor */
+.doctor-dashboard .pagination a:hover,
+.doctor-dashboard .pagination .active span {
+    border-color: #2A7FA7;
+    background: #2A7FA7;
+    color: white;
+}
+
+.doctor-dashboard .pagination a:hover {
+    background: #f0f7fb;
+    color: #2A7FA7;
+}
+
+/* Para dashboard de patient */
+.patient-dashboard .pagination a:hover,
+.patient-dashboard .pagination .active span {
+    border-color: #2A7FA7;
+    background: #2A7FA7;
+    color: white;
+}
+
+.patient-dashboard .pagination a:hover {
+    background: #f0f7fb;
+    color: #2A7FA7;
+}
