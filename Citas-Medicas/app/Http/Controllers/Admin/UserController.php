@@ -18,6 +18,31 @@ class UserController extends Controller
         return view('admin.users.show', compact('user'));
     }
 
+    public function update(Request $request, User $user)
+    {
+        try {
+            // Si solo envía active (para activar)
+            if ($request->has('active')) {
+                $user->update(['active' => $request->boolean('active')]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Usuario ' . ($request->boolean('active') ? 'activado' : 'desactivado') . ' exitosamente'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Operación no permitida'
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     public function destroy(User $user)
     {
         try {
@@ -34,9 +59,4 @@ class UserController extends Controller
             ], 400);
         }
     }
-
-
-
-
-
 }
