@@ -426,28 +426,39 @@
             });
         }
 
-        function deactivateDoctor(doctorId) {
-            if(confirm('¿Desactivar este médico?')) {
+        function activateDoctor(doctorId) {
+            if(confirm('¿Activar este médico?')) {
+                // Para activar, hacemos una actualización con status activo
+                // Usamos PUT similar al edit, pero solo enviamos el estado
+                
                 fetch(`/admin/doctors/${doctorId}`, {
-                    method: 'DELETE',
+                    method: 'PUT',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    }
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        _method: 'PUT',
+                        active: true
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if(data.success) {
-                        showAlert(data.message, 'success');
+                        showAlert('Médico activado correctamente', 'success');
                         setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert(data.message, 'error');
                     }
                 })
                 .catch(error => {
-                    showAlert('Error al desactivar el médico', 'error');
+                    showAlert('Error al activar el médico', 'error');
                     console.error('Error:', error);
                 });
             }
         }
+
 
         function activateDoctor(doctorId) {
             alert('Activar médico: ' + doctorId);
@@ -474,7 +485,12 @@
                 .then(data => {
                     if(data.success) {
                         showAlert(data.message, 'success');
+                        // Recargar tabla de usuarios
+                        const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                        if(row) row.remove();
                         setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert(data.message, 'error');
                     }
                 })
                 .catch(error => {
@@ -483,6 +499,7 @@
                 });
             }
         }
+
 
         // =================== MODAL ===================
 

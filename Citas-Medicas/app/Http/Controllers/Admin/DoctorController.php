@@ -72,23 +72,47 @@ class DoctorController extends Controller
      */
     public function update(Request $request, Doctor $doctor)
     {
-        $validated = $request->validate ([
-            'name' => 'required|string|max:255',
-            'specialty' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'license_number' => 'required|string|max:50',
-        ]);
+        try {
+            // Si solo envía active (para activar/desactivar)
+            if ($request->has('active')) {
+                $doctor->update(['active' => $request->boolean('active')]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Médico ' . ($request->boolean('active') ? 'activado' : 'desactivado') . ' exitosamente'
+                ]);
+            }
 
-        $doctor->user->update(['name' => $validated['name']]);
-        $doctor->update([
-            'specialty'=>$validated['specialty'],
-            'phone'=> $validated['phone'],
-            'license_number'=> $validated['license_number'],
-        ]);
+            // Validación normal para edición completa
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'specialty' => 'required|string|max:255',
+                'phone' => 'required|string|max:20',
+                'license_number' => 'required|string|max:50',
+            ]);
 
-        return redirect()->route('admin.doctors.index')
-            ->with('success', 'Doctor actualizado exitosamente.');
+            $doctor->user->update(['name' => $validated['name']]);
+            $doctor->update([
+                'specialty' => $validated['specialty'],
+                'phone' => $validated['phone'],
+                'license_number' => $validated['license_number'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Médico actualizado exitosamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
+
+
+
+
 
     /**
      * Remove the specified resource from storage.

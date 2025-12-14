@@ -20,9 +20,23 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        // Soft delete o deshabilitar
-        $user->update(['active' => false]);
-        return redirect()->route('admin.users.index')
-            ->with('success', 'Usuario desactivado');
+        try {
+            $user->update(['active' => false]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario desactivado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
+
+
+
+
+
 }

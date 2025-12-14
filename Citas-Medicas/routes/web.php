@@ -18,7 +18,7 @@ Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
-// ====== AUTENTICACIÓN ======
+// ====== AUTENTICACIÓN (GUEST) ======
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
@@ -26,10 +26,16 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 });
 
-// ====== RUTAS PROTEGIDAS ======
+// ====== RUTAS AUTENTICADAS (TODAS) ======
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    // ====== CITAS ======
+    Route::prefix('citas')->name('appointments.')->group(function () {
+        Route::post('/', [AppointmentController::class, 'store'])->name('store');
+        Route::post('/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('cancel');
+    });
 });
 
 // ====== PACIENTES ======
@@ -40,45 +46,29 @@ Route::middleware(['auth', 'checkRole:patient'])->prefix('paciente')->name('pati
 // ====== MÉDICOS ======
 Route::middleware(['auth', 'checkRole:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
     Route::get('/dashboard', [DoctorDashboardController::class, 'index'])->name('dashboard');
-    Route::post('/appointments/{appointment}/update-status', 
-        [DoctorDashboardController::class, 'updateAppointmentStatus'])
+    Route::post('/appointments/{appointment}/update-status', [DoctorDashboardController::class, 'updateAppointmentStatus'])
         ->name('appointments.update-status');
-});
-
-// ====== CITAS (sin protección de rol) ======
-Route::middleware('auth')->group(function () {
-    Route::post('/citas', [AppointmentController::class, 'store'])
-        ->name('appointments.store');
-    Route::post('/citas/{appointment}/cancel', [AppointmentController::class, 'cancel'])
-        ->name('appointments.cancel');
 });
 
 // ====== ADMIN ======
 Route::middleware(['auth', 'checkRole:admin'])->group(function () {
-    // Dashboard principal (muestra todo)
+    // Dashboard principal
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
         ->name('admin.dashboard');
     
-    // AJAX endpoints para CRUD
+    // CRUD endpoints AJAX
     Route::prefix('admin')->name('admin.')->group(function () {
-        // Doctors AJAX
-        Route::post('/doctors/store', [AdminDoctorController::class, 'store'])
-            ->name('doctors.store');
-        Route::put('/doctors/{doctor}', [AdminDoctorController::class, 'update'])
-            ->name('doctors.update');
-        Route::delete('/doctors/{doctor}', [AdminDoctorController::class, 'destroy'])
-            ->name('doctors.destroy');
+        // Doctors
+        Route::post('/doctors/store', [AdminDoctorController::class, 'store'])->name('doctors.store');
+        Route::put('/doctors/{doctor}', [AdminDoctorController::class, 'update'])->name('doctors.update');
+        Route::delete('/doctors/{doctor}', [AdminDoctorController::class, 'destroy'])->name('doctors.destroy');
         
-        // Schedules AJAX
-        Route::post('/schedules/store', [AdminScheduleController::class, 'store'])
-            ->name('schedules.store');
-        Route::put('/schedules/{schedule}', [AdminScheduleController::class, 'update'])
-            ->name('schedules.update');
-        Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])
-            ->name('schedules.destroy');
+        // Schedules
+        Route::post('/schedules/store', [AdminScheduleController::class, 'store'])->name('schedules.store');
+        Route::put('/schedules/{schedule}', [AdminScheduleController::class, 'update'])->name('schedules.update');
+        Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])->name('schedules.destroy');
         
-        // Users AJAX
-        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
-            ->name('users.destroy');
+        // Users
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 });
