@@ -39,8 +39,15 @@
         Route::get('/paciente/dashboard', [PatientDashboardController::class, 'index'])
             ->name('patient.dashboard');
         // Dashboard para doctores
-        Route::get('/doctor/dashboard', [DoctorDashboardController::class, 'index'])
-            ->name('doctor.dashboard');
+        Route::prefix('doctor')->middleware('auth')->group(function () {
+            Route::get('/dashboard', [DoctorDashboardController::class, 'index'])
+                ->name('doctor.dashboard');
+            
+            Route::post('/appointments/{appointment}/update-status', 
+                [DoctorDashboardController::class, 'updateAppointmentStatus'])
+                ->name('doctor.appointments.update-status');
+        });
+
 
 
         // Cerrar sesión
