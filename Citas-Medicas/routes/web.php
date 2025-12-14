@@ -5,15 +5,20 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientDashboardController;
-use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\DoctorDashboardController;
+use App\Http\Controllers\Admin\DoctorController as AdminDoctorController;
+use App\Http\Controllers\Admin\ScheduleController as AdminScheduleController;
+use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 
-// PÚBLICAS
+// ====== PÚBLICAS ======
 Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
-// AUTH GUEST (para no autenticados)
+// ====== AUTENTICACIÓN ======
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
@@ -21,7 +26,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 });
 
-// AUTH REQUIRED (cualquier usuario autenticado)
+// ====== RUTAS PROTEGIDAS ======
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -36,16 +41,44 @@ Route::middleware(['auth', 'checkRole:patient'])->prefix('paciente')->name('pati
 Route::middleware(['auth', 'checkRole:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
     Route::get('/dashboard', [DoctorDashboardController::class, 'index'])->name('dashboard');
     Route::post('/appointments/{appointment}/update-status', 
-        [DoctorDashboardController::class, 'updateAppointmentStatus'])->name('appointments.update-status');
+        [DoctorDashboardController::class, 'updateAppointmentStatus'])
+        ->name('appointments.update-status');
+});
+
+// ====== CITAS (sin protección de rol) ======
+Route::middleware('auth')->group(function () {
+    Route::post('/citas', [AppointmentController::class, 'store'])
+        ->name('appointments.store');
+    Route::post('/citas/{appointment}/cancel', [AppointmentController::class, 'cancel'])
+        ->name('appointments.cancel');
 });
 
 // ====== ADMIN ======
-Route::middleware(['auth', 'checkRole:admin'])->prefix('admin')->name('admin.')->group(function () {
-
-});
-
-// ====== CITAS (sin protección de rol, solo autenticado) ======
-Route::middleware('auth')->group(function () {
-    Route::post('/citas', [AppointmentController::class, 'store'])->name('appointments.store');
-    Route::post('/citas/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+Route::middleware(['auth', 'checkRole:admin'])->group(function () {
+    // Dashboard principal (muestra todo)
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+        ->name('admin.dashboard');
+    
+    // AJAX endpoints para CRUD
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Doctors AJAX
+        Route::post('/doctors/store', [AdminDoctorController::class, 'store'])
+            ->name('doctors.store');
+        Route::put('/doctors/{doctor}', [AdminDoctorController::class, 'update'])
+            ->name('doctors.update');
+        Route::delete('/doctors/{doctor}', [AdminDoctorController::class, 'destroy'])
+            ->name('doctors.destroy');
+        
+        // Schedules AJAX
+        Route::post('/schedules/store', [AdminScheduleController::class, 'store'])
+            ->name('schedules.store');
+        Route::put('/schedules/{schedule}', [AdminScheduleController::class, 'update'])
+            ->name('schedules.update');
+        Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])
+            ->name('schedules.destroy');
+        
+        // Users AJAX
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
+            ->name('users.destroy');
+    });
 });

@@ -2,9 +2,9 @@
 <!-- Laravel Blade Template -->
 <html lang="es">
 <head>
-        <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediConnect - Dashboard</title>
+    <title>MediConnect - Dashboard Admin</title>
     <!-- CSS Compartido -->
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
@@ -15,7 +15,7 @@
         <div class="sidebar">
             <div class="logo-section">
                 <div class="logo">
-                    <div class="logo-icon">🏥</div>
+                    <div class="logo-icon">🥼</div>
                     <span>MediConnect</span>
                 </div>
             </div>
@@ -44,11 +44,14 @@
                 <div class="user-info">
                     <div class="user-avatar">⚙️</div>
                     <div>
-                        <h4>Admin Sistema</h4>
+                        <h4>{{ auth()->user()->name }}</h4>
                         <p>Administrador</p>
                     </div>
                 </div>
-                <button class="logout-btn-sidebar" onclick="logout()">Cerrar Sesión</button>
+                <form action="{{ route('logout') }}" method="POST" style="width: 100%;">
+                    @csrf
+                    <button type="submit" class="logout-btn-sidebar">Cerrar Sesión</button>
+                </form>
             </div>
         </div>
 
@@ -58,6 +61,9 @@
                 <h1>Dashboard Administrador</h1>
             </div>
 
+            <!-- Alerts -->
+            <div id="alertContainer"></div>
+
             <!-- Dashboard Section -->
             <div id="dashboard" class="content-section">
                 <div class="stats-grid">
@@ -65,28 +71,28 @@
                         <div class="stat-icon blue">👥</div>
                         <div class="stat-content">
                             <h3>Total Médicos</h3>
-                            <p class="stat-number">8</p>
+                            <p class="stat-number">{{ $totalDoctors }}</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon green">👤</div>
                         <div class="stat-content">
                             <h3>Total Pacientes</h3>
-                            <p class="stat-number">156</p>
+                            <p class="stat-number">{{ $totalPatients }}</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon orange">📅</div>
                         <div class="stat-content">
                             <h3>Citas Este Mes</h3>
-                            <p class="stat-number">324</p>
+                            <p class="stat-number">{{ $totalAppointments }}</p>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon red">⏳</div>
                         <div class="stat-content">
                             <h3>Pendientes de Confirmar</h3>
-                            <p class="stat-number">12</p>
+                            <p class="stat-number">{{ $pendingAppointments }}</p>
                         </div>
                     </div>
                 </div>
@@ -104,22 +110,22 @@
                         <tbody>
                             <tr>
                                 <td>Médicos Activos</td>
-                                <td>8</td>
+                                <td>{{ $doctors->where('active', true)->count() }}</td>
                                 <td><span class="status-badge status-active">Activo</span></td>
                             </tr>
                             <tr>
                                 <td>Pacientes Registrados</td>
-                                <td>156</td>
+                                <td>{{ $totalPatients }}</td>
                                 <td><span class="status-badge status-active">Activo</span></td>
                             </tr>
                             <tr>
                                 <td>Citas Confirmadas</td>
-                                <td>312</td>
+                                <td>{{ $appointments->where('status', 'confirmed')->count() }}</td>
                                 <td><span class="status-badge status-confirmed">Confirmadas</span></td>
                             </tr>
                             <tr>
                                 <td>Citas Pendientes</td>
-                                <td>12</td>
+                                <td>{{ $pendingAppointments }}</td>
                                 <td><span class="status-badge status-pending">Pendientes</span></td>
                             </tr>
                         </tbody>
@@ -138,53 +144,41 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
+                                <th>Email</th>
                                 <th>Especialidad</th>
                                 <th>Teléfono</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Dr. Carlos Martínez</td>
-                                <td>Cardiología</td>
-                                <td>+34 912 345 678</td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editDoctor('Carlos Martínez')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateDoctor('Carlos Martínez')">Desactivar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Dra. María López</td>
-                                <td>Pediatría</td>
-                                <td>+34 912 345 679</td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editDoctor('María López')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateDoctor('María López')">Desactivar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Jorge Mendoza</td>
-                                <td>Dermatología</td>
-                                <td>+34 912 345 680</td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editDoctor('Jorge Mendoza')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateDoctor('Jorge Mendoza')">Desactivar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Dra. Ana Rodríguez</td>
-                                <td>Neurología</td>
-                                <td>+34 912 345 681</td>
-                                <td><span class="status-badge status-inactive">Inactivo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editDoctor('Ana Rodríguez')">Editar</button>
-                                    <button class="btn btn-success btn-sm" onclick="activateDoctor('Ana Rodríguez')">Activar</button>
-                                </td>
-                            </tr>
+                        <tbody id="doctorsTableBody">
+                            @forelse($doctors as $doctor)
+                                <tr data-doctor-id="{{ $doctor->id }}">
+                                    <td>{{ $doctor->user->name }}</td>
+                                    <td>{{ $doctor->user->email }}</td>
+                                    <td>{{ $doctor->specialty }}</td>
+                                    <td>{{ $doctor->phone }}</td>
+                                    <td>
+                                        @if($doctor->active)
+                                            <span class="status-badge status-active">Activo</span>
+                                        @else
+                                            <span class="status-badge status-inactive">Inactivo</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="editDoctor({{ $doctor->id }})">Editar</button>
+                                        @if($doctor->active)
+                                            <button class="btn btn-danger btn-sm" onclick="deactivateDoctor({{ $doctor->id }})">Desactivar</button>
+                                        @else
+                                            <button class="btn btn-success btn-sm" onclick="activateDoctor({{ $doctor->id }})">Activar</button>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 20px;">No hay médicos registrados</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -206,46 +200,32 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Juan Pérez</td>
-                                <td>Dr. Carlos Martínez</td>
-                                <td>11/12/2025</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status-badge status-confirmed">Confirmada</span></td>
-                                <td>
-                                    <button class="btn btn-secondary btn-sm" onclick="viewAppointment('Juan Pérez')">Ver</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>María González</td>
-                                <td>Dra. María López</td>
-                                <td>12/12/2025</td>
-                                <td>02:30 PM</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                                <td>
-                                    <button class="btn btn-secondary btn-sm" onclick="viewAppointment('María González')">Ver</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Roberto López</td>
-                                <td>Dr. Jorge Mendoza</td>
-                                <td>13/12/2025</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status-badge status-attended">Atendida</span></td>
-                                <td>
-                                    <button class="btn btn-secondary btn-sm" onclick="viewAppointment('Roberto López')">Ver</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Ana Martínez</td>
-                                <td>Dra. Ana Rodríguez</td>
-                                <td>15/12/2025</td>
-                                <td>03:00 PM</td>
-                                <td><span class="status-badge status-pending">Pendiente</span></td>
-                                <td>
-                                    <button class="btn btn-secondary btn-sm" onclick="viewAppointment('Ana Martínez')">Ver</button>
-                                </td>
-                            </tr>
+                            @forelse($appointments as $appointment)
+                                <tr>
+                                    <td>{{ $appointment->patient->name }}</td>
+                                    <td>{{ $appointment->doctor->user->name }}</td>
+                                    <td>{{ $appointment->appointment_date_time->format('d/m/Y') }}</td>
+                                    <td>{{ $appointment->appointment_date_time->format('H:i') }}</td>
+                                    <td>
+                                        @if($appointment->status === 'confirmed')
+                                            <span class="status-badge status-confirmed">Confirmada</span>
+                                        @elseif($appointment->status === 'pending')
+                                            <span class="status-badge status-pending">Pendiente</span>
+                                        @elseif($appointment->status === 'attended')
+                                            <span class="status-badge status-attended">Atendida</span>
+                                        @else
+                                            <span class="status-badge" style="background: #f0f0f0; color: #666;">{{ ucfirst($appointment->status) }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewAppointment({{ $appointment->id }})">Ver</button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 20px;">No hay citas registradas</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -266,46 +246,39 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Juan Pérez</td>
-                                <td>juan.perez@example.com</td>
-                                <td><span class="status-badge" style="background: #E8D4F7; color: #5A0A9E;">Paciente</span></td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editUser('Juan Pérez')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateUser('Juan Pérez')">Desactivar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Carlos Martínez</td>
-                                <td>carlos.martinez@example.com</td>
-                                <td><span class="status-badge" style="background: #D4E8F7; color: #0A5A9E;">Médico</span></td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editUser('Carlos Martínez')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateUser('Carlos Martínez')">Desactivar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>María González</td>
-                                <td>maria.gonzalez@example.com</td>
-                                <td><span class="status-badge" style="background: #E8D4F7; color: #5A0A9E;">Paciente</span></td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editUser('María González')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateUser('María González')">Desactivar</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Dra. María López</td>
-                                <td>maria.lopez@example.com</td>
-                                <td><span class="status-badge" style="background: #D4E8F7; color: #0A5A9E;">Médico</span></td>
-                                <td><span class="status-badge status-active">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editUser('María López')">Editar</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deactivateUser('María López')">Desactivar</button>
-                                </td>
-                            </tr>
+                            @forelse($users as $user)
+                                <tr data-user-id="{{ $user->id }}">
+                                    <td>{{ $user->name }}</td>
+                                    <td>{{ $user->email }}</td>
+                                    <td>
+                                        @if($user->role === 'patient')
+                                            <span class="status-badge" style="background: #E8D4F7; color: #5A0A9E;">Paciente</span>
+                                        @elseif($user->role === 'doctor')
+                                            <span class="status-badge" style="background: #D4E8F7; color: #0A5A9E;">Médico</span>
+                                        @elseif($user->role === 'admin')
+                                            <span class="status-badge" style="background: #D4F7D4; color: #0A5A0A;">Admin</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($user->active ?? true)
+                                            <span class="status-badge status-active">Activo</span>
+                                        @else
+                                            <span class="status-badge status-inactive">Inactivo</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($user->id !== auth()->id())
+                                            <button class="btn btn-danger btn-sm" onclick="deactivateUser({{ $user->id }})">Desactivar</button>
+                                        @else
+                                            <span style="color: #999;">Tu usuario</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px;">No hay usuarios registrados</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -313,126 +286,210 @@
         </div>
     </div>
 
-    <!-- Modal para agregar médico -->
-    <div id="addDoctorModal" class="modal">
+    <!-- Modal para agregar/editar médico -->
+    <div id="doctorModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Agregar Nuevo Médico</h2>
-                <button class="close-modal" onclick="closeModal('addDoctorModal')">&times;</button>
+                <h2 id="doctorModalTitle">Agregar Nuevo Médico</h2>
+                <button class="close-modal" onclick="closeModal('doctorModal')">&times;</button>
             </div>
-            <form onsubmit="submitAddDoctor(event)">
-                <div class="form-group">
-                    <label>Nombre Completo</label>
-                    <input type="text" required>
-                </div>
+            <form id="doctorForm" onsubmit="submitDoctorForm(event)">
+                @csrf
+                <input type="hidden" id="doctorId" name="doctor_id">
 
                 <div class="form-group">
-                    <label>Especialidad</label>
-                    <select required>
-                        <option value="">-- Selecciona especialidad --</option>
-                        <option value="cardiology">Cardiología</option>
-                        <option value="pediatrics">Pediatría</option>
-                        <option value="dermatology">Dermatología</option>
-                        <option value="neurology">Neurología</option>
-                        <option value="orthopedics">Ortopedia</option>
-                    </select>
+                    <label>Nombre Completo</label>
+                    <input type="text" id="doctorName" name="name" required>
                 </div>
 
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" required>
+                    <input type="email" id="doctorEmail" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Especialidad</label>
+                    <input type="text" id="doctorSpecialty" name="specialty" required>
                 </div>
 
                 <div class="form-group">
                     <label>Teléfono</label>
-                    <input type="tel" required>
+                    <input type="tel" id="doctorPhone" name="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Licencia</label>
+                    <input type="text" id="doctorLicense" name="license_number" required>
                 </div>
 
                 <div class="action-buttons">
-                    <button type="submit" class="btn btn-success">Guardar</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addDoctorModal')">Cancelar</button>
+                    <button type="submit" class="btn btn-success" id="doctorSubmitBtn">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('doctorModal')">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                          '{{ csrf_token() }}';
+
         // Cambiar secciones
         function showSection(sectionId) {
-            // Ocultar todas las secciones
             document.querySelectorAll('.content-section').forEach(section => {
                 section.style.display = 'none';
             });
-
-            // Mostrar la sección seleccionada
             document.getElementById(sectionId).style.display = 'block';
 
-            // Actualizar menu activo
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.classList.remove('active');
             });
             event.target.closest('.menu-item').classList.add('active');
         }
 
-        // Abrir modal para agregar médico
-        function openAddDoctorModal() {
-            document.getElementById('addDoctorModal').classList.add('active');
+        // Mostrar alertas
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type}" style="margin: 10px 0; padding: 15px; border-radius: 5px; background: ${type === 'success' ? '#d4edda' : '#f8d7da'}; color: ${type === 'success' ? '#155724' : '#721c24'};">
+                    ${message}
+                </div>
+            `;
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if(alert) alert.remove();
+            }, 5000);
         }
 
-        // Cerrar modal
+        // =================== MÉDICOS ===================
+
+        function openAddDoctorModal() {
+            document.getElementById('doctorModalTitle').textContent = 'Agregar Nuevo Médico';
+            document.getElementById('doctorForm').reset();
+            document.getElementById('doctorId').value = '';
+            document.getElementById('doctorEmail').disabled = false;
+            document.getElementById('doctorSubmitBtn').textContent = 'Guardar';
+            document.getElementById('doctorModal').classList.add('active');
+        }
+
+        function editDoctor(doctorId) {
+            const row = document.querySelector(`tr[data-doctor-id="${doctorId}"]`);
+            const cells = row.querySelectorAll('td');
+
+            document.getElementById('doctorModalTitle').textContent = 'Editar Médico';
+            document.getElementById('doctorId').value = doctorId;
+            document.getElementById('doctorName').value = cells[0].textContent;
+            document.getElementById('doctorEmail').value = cells[1].textContent;
+            document.getElementById('doctorEmail').disabled = true;
+            document.getElementById('doctorSpecialty').value = cells[2].textContent;
+            document.getElementById('doctorPhone').value = cells[3].textContent;
+            document.getElementById('doctorLicense').value = '';
+            document.getElementById('doctorSubmitBtn').textContent = 'Actualizar';
+            document.getElementById('doctorModal').classList.add('active');
+        }
+
+        function submitDoctorForm(event) {
+            event.preventDefault();
+
+            const doctorId = document.getElementById('doctorId').value;
+            const formData = new FormData(document.getElementById('doctorForm'));
+
+            const url = doctorId 
+                ? `/admin/doctors/${doctorId}`
+                : `{{ route('admin.doctors.store') }}`;
+
+            const method = doctorId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    showAlert(data.message, 'success');
+                    closeModal('doctorModal');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Error al procesar la solicitud', 'error');
+                console.error('Error:', error);
+            });
+        }
+
+        function deactivateDoctor(doctorId) {
+            if(confirm('¿Desactivar este médico?')) {
+                fetch(`/admin/doctors/${doctorId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        showAlert(data.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error al desactivar el médico', 'error');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function activateDoctor(doctorId) {
+            alert('Activar médico: ' + doctorId);
+        }
+
+        // =================== CITAS ===================
+
+        function viewAppointment(appointmentId) {
+            alert('Ver detalles de cita: ' + appointmentId);
+        }
+
+        // =================== USUARIOS ===================
+
+        function deactivateUser(userId) {
+            if(confirm('¿Desactivar este usuario?')) {
+                fetch(`/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        showAlert(data.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error al desactivar el usuario', 'error');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        // =================== MODAL ===================
+
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
-        // Acciones de médicos
-        function editDoctor(name) {
-            alert(`Editando médico: ${name}`);
-            openAddDoctorModal();
-        }
-
-        function deactivateDoctor(name) {
-            if(confirm(`¿Desactivar a ${name}?`)) {
-                alert(`✓ ${name} ha sido desactivado.`);
-            }
-        }
-
-        function activateDoctor(name) {
-            if(confirm(`¿Activar a ${name}?`)) {
-                alert(`✓ ${name} ha sido activado.`);
-            }
-        }
-
-        function submitAddDoctor(event) {
-            event.preventDefault();
-            alert('✓ Médico agregado exitosamente.');
-            closeModal('addDoctorModal');
-        }
-
-        // Acciones de citas
-        function viewAppointment(patientName) {
-            alert(`Ver detalles de cita de: ${patientName}`);
-        }
-
-        // Acciones de usuarios
-        function editUser(name) {
-            alert(`Editando usuario: ${name}`);
-        }
-
-        function deactivateUser(name) {
-            if(confirm(`¿Desactivar usuario ${name}?`)) {
-                alert(`✓ Usuario ${name} ha sido desactivado.`);
-            }
-        }
-
-        // Cerrar sesión
-        function logout() {
-            if(confirm('¿Deseas cerrar sesión?')) {
-                alert('Sesión cerrada. Hasta pronto.');
-                // Redirigir a login
-            }
-        }
-
-        // Cerrar modal al hacer clic fuera
         window.onclick = function(event) {
             const modal = event.target;
             if (modal.classList && modal.classList.contains('modal')) {
