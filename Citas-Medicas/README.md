@@ -14,22 +14,22 @@
 
 ## 📑 Tabla de Contenidos
 
-1. [Descripción](#descripción)
-2. [Características](#características)
-3. [Requisitos Previos](#requisitos-previos)
-4. [Instalación](#instalación)
-5. [Seeders y Datos de Prueba](#seeders-y-datos-de-prueba)
-6. [Configuración](#configuración)
-7. [Estructura del Proyecto](#estructura-del-proyecto)
-8. [Uso](#uso)
-9. [Documentación Técnica](#documentación-técnica)
-10. [API & Endpoints](#api--endpoints)
-11. [Base de Datos](#base-de-datos)
-12. [Seguridad](#seguridad)
-13. [Testing](#testing)
-14. [Contribución](#contribución)
-15. [Licencia](#licencia)
-16. [Contacto & Soporte](#contacto--soporte)
+1. [Descripción](#-descripción)
+2. [Características](#-características)
+3. [Requisitos Previos](#-requisitos-previos)
+4. [Instalación](#-instalación)
+5. [Seeders y Datos de Prueba](#-seeders-y-datos-de-prueba)
+6. [Configuración](#️-configuración)
+7. [Estructura del Proyecto](#-estructura-del-proyecto)
+8. [Uso](#-uso)
+9. [Documentación Técnica](#-documentación-técnica)
+10. [API & Endpoints](#-api--endpoints)
+11. [Base de Datos](#️-base-de-datos)
+12. [Seguridad](#-seguridad)
+13. [Testing](#-testing)
+14. [Contribución](#-contribución)
+15. [Licencia](#-licencia)
+16. [Contacto & Soporte](#-contacto--soporte)
 
 ---
 
