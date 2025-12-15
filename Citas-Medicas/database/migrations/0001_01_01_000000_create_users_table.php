@@ -12,15 +12,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable(); 
             $table->string('password');
             $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient');
             $table->boolean('active')->default(true);
             $table->rememberToken();
             $table->timestamps();
-        });
-
-         Schema::table('users', function (Blueprint $table) {
-        $table->boolean('active')->default(true)->after('role');
         });
     }
 
