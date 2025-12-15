@@ -2,7 +2,7 @@
 
 ## 1. Descripción General
 
-Sistema web desarrollado con **Laravel 11** para la gestión integral de citas médicas, que permite la interacción entre tres tipos de usuarios: **pacientes**, **doctores** y **administradores**. El sistema facilita el registro de usuarios, la gestión de médicos, la configuración de horarios de atención y la programación de citas médicas.
+Sistema web desarrollado con **Laravel 12** para la gestión integral de citas médicas, que permite la interacción entre tres tipos de usuarios: **pacientes**, **doctores** y **administradores**. El sistema facilita el registro de usuarios, la gestión de médicos, la configuración de horarios de atención y la programación de citas médicas.
 
 ### Características Principales
 - Sistema multi-rol (Admin, Doctor, Paciente)
@@ -13,7 +13,8 @@ Sistema web desarrollado con **Laravel 11** para la gestión integral de citas m
 - Autenticación y autorización robusta
 
 ### Tecnologías Utilizadas
-- **Framework:** Laravel 11.x
+- **Framework:** Laravel 12.x
+- **PHP:** ^8.2
 - **Base de datos:** MySQL / MariaDB
 - **Frontend:** Blade Templates, JavaScript, CSS
 - **Autenticación:** Laravel Auth
@@ -261,7 +262,7 @@ public function doctor(): BelongsTo
        │                  └──────────────┘
        │
        │
-┌──────┴──────────┐
+┌──────┴──────────────┐
 │  Appointments   │
 ├─────────────────┤
 │ • id (PK)       │
@@ -275,9 +276,1005 @@ public function doctor(): BelongsTo
 
 ---
 
-## 5. Capa de Controladores
+## 5. Diagramas de Flujo de Procesos
 
-### 5.1. Controladores de Autenticación
+### 5.1. Flujo de Registro de Usuario
+
+```mermaid
+┌─────────────────────────────────────────────────────────────────┐
+│                    REGISTRO DE USUARIO                          │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────┐
+    │ Usuario     │
+    │ accede a    │
+    │ /register   │
+    └──────┬──────┘
+           │
+           ▼
+    ┌─────────────┐
+    │ Formulario  │
+    │ de registro │
+    │ (Blade)     │
+    └──────┬──────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Ingresa datos:  │
+    │ - Nombre        │
+    │ - Email         │
+    │ - Contraseña    │
+    │ - Rol           │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ POST /register   │
+    │ RegisterController│
+    └──────┬───────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ Validar datos    │
+    │ - Email único    │
+    │ - Password ≥8    │
+    │ - Campos req.    │
+    └──────┬───────────┘
+           │
+           ├─────── NO ─────┐
+           │                │
+          SÍ                ▼
+           │         ┌─────────────┐
+           │         │ Mostrar     │
+           │         │ errores     │
+           │         └──────┬──────┘
+           │                │
+           │                │
+           ▼                │
+    ┌─────────────┐         │
+    │ Encriptar   │         │
+    │ password    │         │
+    │ (bcrypt)    │         │
+    └──────┬──────┘         │
+           │                │
+           ▼                │
+    ┌─────────────┐         │
+    │ Crear User  │         │
+    │ en BD       │         │
+    └──────┬──────┘         │
+           │                │
+           ▼                │
+    ┌─────────────┐         │
+    │ ¿Rol es     │         │
+    │ 'doctor'?   │         │
+    └──────┬──────┘         │
+           │                │
+      ┌────┴────┐           │
+     SÍ        NO           │
+      │         │           │
+      ▼         ▼           │
+   ┌────┐   ┌──────────┐   │
+   │ Flag│   │Redirigir │   │
+   │ para│   │a /login  │   │
+   │admin│   └────┬─────┘   │
+   └──┬─┘        │         │
+      │          │         │
+      ▼          │         │
+   ┌────────┐    │         │
+   │Mensaje │    │         │
+   │"Admin  │    │         │
+   │debe    │    │         │
+   │crear   │    │         │
+   │doctor" │    │         │
+   └───┬────┘    │         │
+       │         │         │
+       └─────────┴─────────┘
+                 │
+                 ▼
+              FIN
+```
+
+---
+
+### 5.2. Flujo de Inicio de Sesión
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      INICIO DE SESIÓN                           │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────┐
+    │ Usuario     │
+    │ accede a    │
+    │ /login      │
+    └──────┬──────┘
+           │
+           ▼
+    ┌─────────────┐
+    │ Formulario  │
+    │ de login    │
+    └──────┬──────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Ingresa:        │
+    │ - Email         │
+    │ - Password      │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ POST /login      │
+    │ LoginController  │
+    └──────┬───────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ Validar          │
+    │ credenciales     │
+    │ Auth::attempt()  │
+    └──────┬───────────┘
+           │
+      ┌────┴────┐
+   VÁLIDO    INVÁLIDO
+      │         │
+      ▼         ▼
+   ┌─────┐  ┌──────────┐
+   │Crear│  │ Mensaje  │
+   │sesión│  │ "Cred.   │
+   └──┬──┘  │ inválidas│
+      │     └────┬─────┘
+      ▼          │
+   ┌─────────┐   │
+   │¿Usuario │   │
+   │ activo? │   │
+   └────┬────┘   │
+        │        │
+   ┌────┴────┐   │
+  SÍ        NO   │
+   │         │   │
+   ▼         ▼   │
+┌──────┐  ┌────┐ │
+│Verificar Usuario│
+│rol      inactivo│
+└──┬─────┘ └──┬─┘ │
+   │          │   │
+   ▼          │   │
+ ┌────────┐   │   │
+ │¿Qué rol?│  │   │
+ └───┬─────┘  │   │
+     │        │   │
+  ┌──┴──┬──┬──┘   │
+  │     │  │      │
+ADMIN DOCTOR      │
+  │     │  PATIENT│
+  ▼     ▼  ▼      │
+┌───┐ ┌──┐ ┌────┐ │
+│/admin│doctor│patient│
+│dash│ │dash│ │dash│ │
+└───┘ └──┘ └────┘ │
+  │     │    │    │
+  └─────┴────┴────┘
+        │
+        ▼
+      FIN
+```
+
+---
+
+### 5.3. Flujo de Creación de Doctor (Administrador)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              CREACIÓN DE DOCTOR (ADMIN)                         │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────────┐
+    │ Admin autenticado│
+    │ en /admin/dashboard
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Clic en botón   │
+    │ "Nuevo Doctor"  │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Modal AJAX      │
+    │ aparece         │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────────┐
+    │ Formulario con:      │
+    │ - Select User        │
+    │   (solo role=doctor) │
+    │ - License Number     │
+    │ - Specialty          │
+    │ - Biography (opt)    │
+    │ - Photo (opt)        │
+    └──────┬───────────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ Admin completa   │
+    │ formulario       │
+    └──────┬───────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ POST /admin/     │
+    │ doctors/store    │
+    │ (AJAX)           │
+    └──────┬───────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ DoctorController │
+    │ ::store()        │
+    └──────┬───────────┘
+           │
+           ▼
+    ┌────────────────────┐
+    │ Validar datos:     │
+    │ - user_id exists   │
+    │ - license unique   │
+    │ - specialty req.   │
+    └──────┬─────────────┘
+           │
+      ┌────┴────┐
+   VÁLIDO    INVÁLIDO
+      │         │
+      ▼         ▼
+   ┌─────────┐ ┌──────────┐
+   │Verificar│ │Retornar  │
+   │que user │ │errores   │
+   │no sea   │ │JSON 422  │
+   │doctor ya│ └────┬─────┘
+   └────┬────┘      │
+        │           │
+   ┌────┴────┐      │
+  SÍ        NO      │
+   │         │      │
+   ▼         ▼      │
+┌──────┐ ┌────────┐ │
+│Crear │ │Error:  │ │
+│Doctor│ │"Ya es  │ │
+│en BD │ │doctor" │ │
+└──┬───┘ └───┬────┘ │
+   │         │      │
+   ▼         │      │
+┌──────────┐ │      │
+│Subir foto│ │      │
+│si existe │ │      │
+└────┬─────┘ │      │
+     │       │      │
+     ▼       │      │
+┌──────────┐ │      │
+│Retornar  │ │      │
+│success   │ │      │
+│JSON 200  │ │      │
+└────┬─────┘ │      │
+     │       │      │
+     └───────┴──────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ JavaScript   │
+    │ actualiza    │
+    │ tabla sin    │
+    │ recargar     │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Cerrar modal │
+    │ Mostrar      │
+    │ notificación │
+    └──────┬───────┘
+           │
+           ▼
+         FIN
+```
+
+---
+
+### 5.4. Flujo de Configuración de Horarios
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           CONFIGURACIÓN DE HORARIOS (ADMIN)                     │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────────┐
+    │ Admin selecciona│
+    │ doctor desde    │
+    │ tabla           │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Clic "Gestionar │
+    │ Horarios"       │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Modal con lista │
+    │ de horarios     │
+    │ existentes      │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Clic "Agregar   │
+    │ Horario"        │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────────┐
+    │ Formulario:          │
+    │ - Day of Week        │
+    │   (select)           │
+    │ - Start Time         │
+    │   (time picker)      │
+    │ - End Time           │
+    │   (time picker)      │
+    │ - Interval Minutes   │
+    │   (number: 15,30,60) │
+    │ - Is Active (check)  │
+    └──────┬───────────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ Admin completa   │
+    │ datos            │
+    └──────┬───────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ POST /admin/     │
+    │ schedules/store  │
+    └──────┬───────────┘
+           │
+           ▼
+    ┌──────────────────────┐
+    │ ScheduleController   │
+    │ ::store()            │
+    └──────┬───────────────┘
+           │
+           ▼
+    ┌────────────────────┐
+    │ Validar:           │
+    │ - doctor_id exists │
+    │ - day_of_week enum │
+    │ - start < end      │
+    │ - interval > 0     │
+    └──────┬─────────────┘
+           │
+      ┌────┴────┐
+   VÁLIDO    INVÁLIDO
+      │         │
+      ▼         ▼
+   ┌─────────┐ ┌──────────┐
+   │Verificar│ │Retornar  │
+   │solapa-  │ │errores   │
+   │mientos  │ │JSON 422  │
+   └────┬────┘ └────┬─────┘
+        │           │
+   ┌────┴────┐      │
+  NO       SÍ       │
+ SOLAPA   SOLAPA    │
+   │        │       │
+   ▼        ▼       │
+┌──────┐ ┌────────┐ │
+│Crear │ │Error:  │ │
+│Schedule│Horarios│ │
+│en BD │ │se      │ │
+│      │ │solapan │ │
+└──┬───┘ └───┬────┘ │
+   │         │      │
+   ▼         │      │
+┌──────────┐ │      │
+│Retornar  │ │      │
+│success   │ │      │
+│con datos │ │      │
+│creados   │ │      │
+└────┬─────┘ │      │
+     │       │      │
+     └───────┴──────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Actualizar   │
+    │ lista de     │
+    │ horarios     │
+    │ (AJAX)       │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Notificación │
+    │ de éxito     │
+    └──────┬───────┘
+           │
+           ▼
+         FIN
+```
+
+---
+
+### 5.5. Flujo de Agendamiento de Cita (Paciente)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              AGENDAMIENTO DE CITA (PACIENTE)                    │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────────┐
+    │ Paciente        │
+    │ autenticado en  │
+    │ /patient/dashboard
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Ve lista de     │
+    │ doctores        │
+    │ disponibles     │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Selecciona      │
+    │ doctor          │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────────┐
+    │ Sistema carga:       │
+    │ - Horarios del doctor│
+    │ - Citas existentes   │
+    │ - Genera slots       │
+    │   disponibles        │
+    └──────┬───────────────┘
+           │
+           ▼
+    ┌────────────────────┐
+    │ Algoritmo de       │
+    │ disponibilidad:    │
+    │                    │
+    │ FOR cada schedule: │
+    │   IF day matches:  │
+    │     Genera slots   │
+    │     cada interval  │
+    │     EXCLUYE citas  │
+    │     existentes     │
+    └──────┬─────────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Muestra         │
+    │ calendario con  │
+    │ slots verdes    │
+    │ (disponibles)   │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Paciente        │
+    │ selecciona      │
+    │ fecha y hora    │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────────┐
+    │ Formulario de cita:  │
+    │ - Fecha/Hora (fija)  │
+    │ - Motivo consulta    │
+    │   (textarea)         │
+    └──────┬───────────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ POST /citas      │
+    │ AppointmentController
+    └──────┬───────────┘
+           │
+           ▼
+    ┌────────────────────┐
+    │ Validar:           │
+    │ - doctor_id valid  │
+    │ - date > now       │
+    │ - reason required  │
+    └──────┬─────────────┘
+           │
+      ┌────┴────┐
+   VÁLIDO    INVÁLIDO
+      │         │
+      ▼         ▼
+   ┌─────────┐ ┌──────────┐
+   │Verificar│ │Retornar  │
+   │disponi- │ │errores   │
+   │bilidad  │ └────┬─────┘
+   └────┬────┘      │
+        │           │
+   ┌────┴────┐      │
+  DISPONIBLE        │
+  OCUPADO           │
+   │    │           │
+   ▼    ▼           │
+┌──────┐ ┌────────┐ │
+│Crear │ │Error:  │ │
+│Appointment│Horario│
+│status │ │ocupado │ │
+│pending│ └───┬────┘ │
+└──┬───┘     │      │
+   │         │      │
+   ▼         │      │
+┌──────────┐ │      │
+│Generar   │ │      │
+│ID único  │ │      │
+│para cita │ │      │
+└────┬─────┘ │      │
+     │       │      │
+     ▼       │      │
+┌──────────┐ │      │
+│Guardar en│ │      │
+│BD        │ │      │
+└────┬─────┘ │      │
+     │       │      │
+     ▼       │      │
+┌──────────┐ │      │
+│(Futuro:  │ │      │
+│Enviar    │ │      │
+│email a   │ │      │
+│doctor)   │ │      │
+└────┬─────┘ │      │
+     │       │      │
+     └───────┴──────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Redirigir a  │
+    │ dashboard con│
+    │ mensaje éxito│
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Actualizar   │
+    │ lista "Mis   │
+    │ Citas"       │
+    └──────┬───────┘
+           │
+           ▼
+         FIN
+```
+
+---
+
+### 5.6. Flujo de Gestión de Cita (Doctor)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              GESTIÓN DE CITA (DOCTOR)                           │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────────┐
+    │ Doctor          │
+    │ autenticado en  │
+    │ /doctor/dashboard│
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────────┐
+    │ Sistema carga:      │
+    │ - Citas asignadas   │
+    │   a este doctor     │
+    │ - Agrupadas por     │
+    │   estado y fecha    │
+    └──────┬──────────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Vista de citas: │
+    │ ┌─────────────┐ │
+    │ │ PENDIENTES  │ │
+    │ │ (badge rojo)│ │
+    │ ├─────────────┤ │
+    │ │ CONFIRMADAS │ │
+    │ │ (badge azul)│ │
+    │ ├─────────────┤ │
+    │ │ COMPLETADAS │ │
+    │ │(badge verde)│ │
+    │ └─────────────┘ │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Doctor          │
+    │ selecciona      │
+    │ una cita        │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Modal detalle:  │
+    │ - Paciente      │
+    │ - Fecha/Hora    │
+    │ - Motivo        │
+    │ - Estado actual │
+    │ - Botones acción│
+    └──────┬──────────┘
+           │
+           ▼
+    ┌──────────────────┐
+    │ Doctor elige     │
+    │ acción:          │
+    └──────┬───────────┘
+           │
+      ┌────┼────┬────────┐
+      │    │    │        │
+   CONFIRMAR COMPLETAR CANCELAR
+      │    │    │        │
+      ▼    ▼    ▼        ▼
+   ┌────┐┌────┐┌────┐┌────┐
+   │POST││POST││POST││POST│
+   │update││update││update││update│
+   │status││status││status││status│
+   └──┬─┘└──┬─┘└──┬─┘└──┬─┘
+      │     │     │     │
+      └─────┴─────┴─────┘
+            │
+            ▼
+    ┌──────────────────────┐
+    │ DoctorDashboard      │
+    │ Controller::         │
+    │ updateAppointmentStatus
+    └──────┬───────────────┘
+           │
+           ▼
+    ┌────────────────────┐
+    │ Validar:           │
+    │ - Appointment      │
+    │   pertenece al     │
+    │   doctor autenticado
+    └──────┬─────────────┘
+           │
+      ┌────┴────┐
+   VÁLIDO    INVÁLIDO
+      │         │
+      ▼         ▼
+   ┌─────────┐ ┌──────────┐
+   │Verificar│ │Error 403 │
+   │transición│No autorizado
+   │válida   │ └────┬─────┘
+   └────┬────┘      │
+        │           │
+   ┌────┴────┐      │
+  VÁLIDA  INVÁLIDA  │
+    │       │       │
+    ▼       ▼       │
+ ┌─────┐ ┌────────┐ │
+ │Actualizar│Error:│ │
+ │status│"Transición│
+ │en BD │ │inválida"│
+ └──┬──┘ └───┬────┘ │
+    │        │      │
+    ▼        │      │
+ ┌─────────┐ │      │
+ │(Opcional)│ │      │
+ │Agregar  │ │      │
+ │notas del│ │      │
+ │doctor   │ │      │
+ └────┬────┘ │      │
+     │       │      │
+     ▼       │      │
+ ┌─────────┐ │      │
+ │(Futuro: │ │      │
+ │Notificar│ │      │
+ │paciente)│ │      │
+ └────┬────┘ │      │
+      │      │      │
+      └──────┴──────┘
+            │
+            ▼
+    ┌──────────────┐
+    │ Retornar     │
+    │ respuesta    │
+    │ JSON         │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ JavaScript   │
+    │ actualiza    │
+    │ tarjeta sin  │
+    │ recargar     │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Cambio de    │
+    │ badge color  │
+    │ según estado │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Notificación │
+    │ toast        │
+    └──────┬───────┘
+           │
+           ▼
+         FIN
+```
+
+---
+
+### 5.7. Flujo de Cancelación de Cita (Paciente)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│            CANCELACIÓN DE CITA (PACIENTE)                       │
+└─────────────────────────────────────────────────────────────────┘
+
+        INICIO
+          │
+          ▼
+    ┌─────────────────┐
+    │ Paciente en     │
+    │ /patient/dashboard
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Ve "Mis Citas"  │
+    │ - Pendientes    │
+    │ - Confirmadas   │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Selecciona cita │
+    │ que desea       │
+    │ cancelar        │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Clic en botón   │
+    │ "Cancelar Cita" │
+    └──────┬──────────┘
+           │
+           ▼
+    ┌─────────────────┐
+    │ Modal de        │
+    │ confirmación:   │
+    │ "¿Está seguro?" │
+    └──────┬──────────┘
+           │
+      ┌────┴────┐
+     SÍ        NO
+      │         │
+      ▼         ▼
+   ┌──────┐  ┌──────┐
+   │Continuar Cerrar│
+   │proceso  modal │
+   └──┬───┘  └──┬───┘
+      │         │
+      ▼         ▼
+   ┌──────────┐ FIN
+   │POST      │
+   │/citas/   │
+   │{id}/cancel
+   └────┬─────┘
+        │
+        ▼
+   ┌──────────────────┐
+   │AppointmentController
+   │::cancel()        │
+   └────┬─────────────┘
+        │
+        ▼
+   ┌────────────────────┐
+   │ Validar:           │
+   │ - Cita existe      │
+   │ - patient_id ==    │
+   │   auth()->id()     │
+   └──────┬─────────────┘
+          │
+     ┌────┴────┐
+  VÁLIDO    INVÁLIDO
+     │         │
+     ▼         ▼
+  ┌─────────┐ ┌──────────┐
+  │Verificar│ │Error 403 │
+  │que no   │ │"No puede │
+  │esté     │ │cancelar  │
+  │completed│ │esta cita"│
+  └────┬────┘ └────┬─────┘
+       │           │
+  ┌────┴────┐      │
+ CANCELABLE        │
+ NO CANCELABLE     │
+  │    │           │
+  ▼    ▼           │
+┌──────┐ ┌───────┐ │
+│Actualizar│Error:│ │
+│status│ │"Cita │ │
+│='cancelled'│ya   │ │
+│     │ │completada│
+└──┬──┘ └───┬───┘ │
+   │        │     │
+   ▼        │     │
+┌─────────┐ │     │
+│Registrar│ │     │
+│fecha de │ │     │
+│cancelación│    │
+└────┬────┘ │     │
+     │      │     │
+     ▼      │     │
+┌─────────┐ │     │
+│(Futuro: │ │     │
+│Notificar│ │     │
+│doctor   │ │     │
+│por email)│     │
+└────┬────┘ │     │
+     │      │     │
+     ▼      │     │
+┌─────────┐ │     │
+│(Futuro: │ │     │
+│Liberar  │ │     │
+│slot para│ │     │
+│otros    │ │     │
+│pacientes)│     │
+└────┬────┘ │     │
+     │      │     │
+     └──────┴─────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Redirigir con│
+    │ mensaje:     │
+    │ "Cita        │
+    │ cancelada"   │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Actualizar   │
+    │ lista de     │
+    │ citas        │
+    └──────┬───────┘
+           │
+           ▼
+    ┌──────────────┐
+    │ Cita ahora   │
+    │ muestra badge│
+    │ gris         │
+    │ "Cancelada"  │
+    └──────┬───────┘
+           │
+           ▼
+         FIN
+```
+
+---
+
+### 5.8. Flujo de Autorización por Middleware
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              MIDDLEWARE DE AUTORIZACIÓN                         │
+└─────────────────────────────────────────────────────────────────┘
+
+        REQUEST HTTP
+             │
+             ▼
+      ┌──────────────┐
+      │ Ruta solicitada
+      │ tiene middleware?
+      └──────┬───────┘
+             │
+        ┌────┴────┐
+       SÍ        NO
+        │         │
+        ▼         ▼
+   ┌─────────┐ ┌──────┐
+   │Ejecutar │ │Pasar │
+   │middleware│ controlador
+   └────┬────┘ └──────┘
+        │
+        ▼
+   ┌─────────────┐
+   │ Middleware  │
+   │ 'auth'      │
+   └──────┬──────┘
+          │
+     ┌────┴────┐
+  AUTENTICADO
+  NO AUTENTICADO
+     │    │
+     ▼    ▼
+  ┌────┐ ┌─────────┐
+  │Continuar│Redirigir│
+  │a next│ │a /login │
+  └──┬─┘ └─────────┘
+     │
+     ▼
+   ┌─────────────┐
+   │ Middleware  │
+   │ 'checkRole' │
+   └──────┬──────┘
+          │
+          ▼
+   ┌──────────────┐
+   │ Obtener rol  │
+   │ requerido del│
+   │ parámetro    │
+   └──────┬───────┘
+          │
+          ▼
+   ┌──────────────┐
+   │ auth()->user()│
+   │ ->role       │
+   └──────┬───────┘
+          │
+          ▼
+   ┌──────────────────┐
+   │ ¿Rol del usuario │
+   │ coincide con     │
+   │ rol requerido?   │
+   └──────┬───────────┘
+          │
+     ┌────┴────┐
+    SÍ        NO
+     │         │
+     ▼         ▼
+  ┌──────┐ ┌─────────┐
+  │Permitir│Error 403│
+  │acceso │ │"Acceso  │
+  │a ruta │ │Denegado"│
+  └──┬───┘ └─────────┘
+     │
+     ▼
+  ┌──────────────┐
+  │ Controlador  │
+  │ ejecuta      │
+  │ acción       │
+  └──────┬───────┘
+         │
+         ▼
+      RESPONSE
+```
+
+---
+
+## 6. Capa de Controladores
+
+### 6.1. Controladores de Autenticación
 
 #### LoginController
 **Ubicación:** `app/Http/Controllers/Auth/LoginController.php`
@@ -300,7 +1297,7 @@ public function doctor(): BelongsTo
 
 ---
 
-### 5.2. Controladores de Dashboard
+### 6.2. Controladores de Dashboard
 
 #### DashboardController
 **Ubicación:** `app/Http/Controllers/DashboardController.php`
@@ -347,7 +1344,7 @@ updateAppointmentStatus(): Actualiza el estado de una cita
 
 ---
 
-### 5.3. Controladores de Administración
+### 6.3. Controladores de Administración
 
 #### Admin\DoctorController
 **Ubicación:** `app/Http/Controllers/Admin/DoctorController.php`
@@ -401,7 +1398,7 @@ destroy(): Eliminar usuario
 
 ---
 
-### 5.4. AppointmentController
+### 6.4. AppointmentController
 
 **Ubicación:** `app/Http/Controllers/AppointmentController.php`
 
@@ -421,15 +1418,15 @@ cancel(): Cancelar una cita existente
 
 ---
 
-## 6. Sistema de Rutas
+## 7. Sistema de Rutas
 
-### 6.1. Rutas Públicas
+### 7.1. Rutas Públicas
 
 ```php
 GET  /                    → Vista de bienvenida (welcome)
 ```
 
-### 6.2. Rutas de Autenticación (Guest)
+### 7.2. Rutas de Autenticación (Guest)
 
 ```php
 GET  /register           → Formulario de registro
@@ -438,7 +1435,7 @@ GET  /login              → Formulario de login
 POST /login              → Procesar login
 ```
 
-### 6.3. Rutas Autenticadas (Todas las Roles)
+### 7.3. Rutas Autenticadas (Todas las Roles)
 
 ```php
 GET  /dashboard          → Dashboard general (redirige según rol)
@@ -449,7 +1446,7 @@ POST /citas              → Crear nueva cita
 POST /citas/{appointment}/cancel → Cancelar cita
 ```
 
-### 6.4. Rutas de Paciente
+### 7.4. Rutas de Paciente
 
 **Middleware:** `auth`, `checkRole:patient`
 
@@ -457,7 +1454,7 @@ POST /citas/{appointment}/cancel → Cancelar cita
 GET  /paciente/dashboard → Dashboard del paciente
 ```
 
-### 6.5. Rutas de Doctor
+### 7.5. Rutas de Doctor
 
 **Middleware:** `auth`, `checkRole:doctor`
 
@@ -466,7 +1463,7 @@ GET  /doctor/dashboard   → Dashboard del doctor
 POST /doctor/appointments/{appointment}/update-status → Actualizar estado de cita
 ```
 
-### 6.6. Rutas de Administrador
+### 7.6. Rutas de Administrador
 
 **Middleware:** `auth`, `checkRole:admin`
 
@@ -490,9 +1487,9 @@ DELETE /admin/users/{user}         → Eliminar usuario
 
 ---
 
-## 7. Middleware y Seguridad
+## 8. Middleware y Seguridad
 
-### 7.1. Middleware CheckRole
+### 8.1. Middleware CheckRole
 
 **Ubicación:** `app/Http/Middleware/CheckRole.php`
 
@@ -510,13 +1507,13 @@ Route::middleware(['auth', 'checkRole:admin'])->group(function () {
 - `doctor`: Acceso a gestión de citas propias
 - `patient`: Acceso a agendamiento de citas
 
-### 7.2. Autenticación
+### 8.2. Autenticación
 
 - **Sistema:** Laravel Authentication (session-based)
 - **Encriptación:** Bcrypt para contraseñas
 - **Protección CSRF:** Tokens en todos los formularios POST/PUT/DELETE
 
-### 7.3. Validaciones de Seguridad
+### 8.3. Validaciones de Seguridad
 
 **En controladores:**
 ```php
@@ -537,9 +1534,9 @@ $this->authorize('update', $appointment);
 
 ---
 
-## 8. Migraciones de Base de Datos
+## 9. Migraciones de Base de Datos
 
-### 8.1. create_users_table.php
+### 9.1. create_users_table.php
 
 ```php
 Schema::create('users', function (Blueprint $table) {
@@ -555,7 +1552,7 @@ Schema::create('users', function (Blueprint $table) {
 });
 ```
 
-### 8.2. create_doctors_table.php
+### 9.2. create_doctors_table.php
 
 ```php
 Schema::create('doctors', function (Blueprint $table) {
@@ -570,7 +1567,7 @@ Schema::create('doctors', function (Blueprint $table) {
 });
 ```
 
-### 8.3. create_schedules_table.php
+### 9.3. create_schedules_table.php
 
 ```php
 Schema::create('schedules', function (Blueprint $table) {
@@ -585,7 +1582,7 @@ Schema::create('schedules', function (Blueprint $table) {
 });
 ```
 
-### 8.4. create_appointments_table.php
+### 9.4. create_appointments_table.php
 
 ```php
 Schema::create('appointments', function (Blueprint $table) {
@@ -600,7 +1597,7 @@ Schema::create('appointments', function (Blueprint $table) {
 });
 ```
 
-### 8.5. Índices Recomendados
+### 9.5. Índices Recomendados
 
 ```php
 // En appointments
@@ -610,87 +1607,6 @@ $table->index(['patient_id', 'status']);
 
 // En schedules
 $table->index(['doctor_id', 'day_of_week']);
-```
-
----
-
-## 9. Flujos de Negocio
-
-### 9.1. Registro de Usuario
-
-```
-1. Usuario accede a /register
-2. Completa formulario (nombre, email, contraseña, rol)
-3. Sistema valida datos:
-   - Email único
-   - Contraseña mínimo 8 caracteres
-4. Si rol = 'doctor':
-   - Redirigir a admin para completar datos médicos
-5. Usuario redirigido a login
-```
-
-### 9.2. Creación de Doctor (Admin)
-
-```
-1. Admin accede a /admin/dashboard
-2. Clic en "Nuevo Doctor"
-3. Formulario AJAX con:
-   - Selección de usuario existente
-   - Número de licencia
-   - Especialidad
-   - Biografía (opcional)
-   - Foto (opcional)
-4. Sistema valida:
-   - Usuario no sea doctor ya
-   - Licencia única
-5. Se crea registro en tabla doctors
-6. Actualización dinámica de la lista
-```
-
-### 9.3. Configuración de Horarios
-
-```
-1. Admin selecciona doctor
-2. Define bloques de horario:
-   - Día de la semana
-   - Hora inicio - Hora fin
-   - Intervalo entre citas (minutos)
-3. Sistema valida:
-   - start_time < end_time
-   - No solapamiento de horarios
-4. Guarda configuración
-5. Horarios disponibles para agendar citas
-```
-
-### 9.4. Agendar Cita (Paciente)
-
-```
-1. Paciente accede a /paciente/dashboard
-2. Selecciona doctor
-3. Sistema muestra horarios disponibles según:
-   - Configuración de schedules del doctor
-   - Citas ya agendadas
-4. Paciente selecciona fecha/hora
-5. Ingresa motivo de consulta
-6. Sistema valida:
-   - Fecha futura
-   - Horario dentro de bloques configurados
-   - No conflicto con otras citas
-7. Crea appointment con status='pending'
-8. Notificación al doctor (futura mejora)
-```
-
-### 9.5. Gestión de Cita (Doctor)
-
-```
-1. Doctor accede a /doctor/dashboard
-2. Ve lista de citas asignadas
-3. Puede actualizar estado:
-   - pending → confirmed
-   - confirmed → completed
-   - cualquier estado → cancelled
-4. Sistema actualiza appointment.status
-5. Refleja cambios en dashboard del paciente
 ```
 
 ---
@@ -988,5 +1904,5 @@ Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para má
 ---
 
 **Última actualización:** Diciembre 2025  
-**Versión de Laravel:** 11.x  
+**Versión de Laravel:** 12.x  
 **Estado:** En desarrollo activo
