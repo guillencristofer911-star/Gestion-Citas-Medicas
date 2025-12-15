@@ -307,22 +307,23 @@ flowchart TD
 flowchart TD
     A([INICIO]) --> B[Usuario accede a /login]
     B --> C[Formulario de login]
-    C --> D[Ingresa:<br/>- Email<br/>- Password]
+    C --> D[Ingresa datos<br/>Email y Password]
     D --> E[POST /login<br/>LoginController]
-    E --> F{Validar credenciales<br/>Auth::attempt}
-    F -->|INVÁLIDO| G[Mensaje:<br/>Credenciales inválidas]
+    E --> F{Validar credenciales}
+    F -->|INVÁLIDO| G[Mensaje de error]
     G --> C
     F -->|VÁLIDO| H[Crear sesión]
     H --> I{Usuario activo?}
-    I -->|NO| J[Mensaje:<br/>Usuario inactivo]
+    I -->|NO| J[Error: Usuario inactivo]
     J --> C
-    I -->|SI| K{Verificar rol}
-    K -->|ADMIN| L[/admin/dashboard]
-    K -->|DOCTOR| M[/doctor/dashboard]
-    K -->|PATIENT| N[/patient/dashboard]
-    L --> O([FIN])
-    M --> O
-    N --> O
+    I -->|SI| K[Verificar rol del usuario]
+    K --> L{Tipo de rol}
+    L -->|ADMIN| M[Redirigir a<br/>/admin/dashboard]
+    L -->|DOCTOR| N[Redirigir a<br/>/doctor/dashboard]
+    L -->|PATIENT| O[Redirigir a<br/>/patient/dashboard]
+    M --> P([FIN])
+    N --> P
+    O --> P
 ```
 
 ---
@@ -342,9 +343,9 @@ flowchart TD
     I -->|INVÁLIDO| J[Retornar errores<br/>JSON 422]
     J --> E
     I -->|VÁLIDO| K{Verificar que user<br/>no sea doctor ya}
-    K -->|NO| L[Error:<br/>Ya es doctor]
+    K -->|YA ES DOCTOR| L[Error:<br/>Ya es doctor]
     L --> J
-    K -->|SI| M[Crear Doctor en BD]
+    K -->|NO ES DOCTOR| M[Crear Doctor en BD]
     M --> N[Subir foto<br/>si existe]
     N --> O[Retornar success<br/>JSON 200]
     O --> P[JavaScript actualiza<br/>tabla sin recargar]
@@ -843,7 +844,6 @@ $table->index(['doctor_id', 'day_of_week']);
 ## 10. Consideraciones de Seguridad
 
 ### 10.1. Autenticación y Autorización
-
 - **Session-based authentication:** Laravel gestiona sesiones seguras
 - **Password hashing:** Bcrypt automático en User model
 - **Middleware de roles:** Verificación de permisos en cada ruta protegida
@@ -889,7 +889,6 @@ if ($appointment->doctor_id !== auth()->user()->doctor->id) {
 ---
 
 ## 11. Instalación y Configuración
-
 ### 11.1. Requisitos del Sistema
 
 - **PHP:** >= 8.2
@@ -1002,54 +1001,54 @@ php artisan test --filter AppointmentTest
 
 ### 13.1. Funcionalidades
 
-- [ ] **Sistema de notificaciones:**
-  - Email al crear/confirmar/cancelar citas
-  - Recordatorios automáticos 24h antes
-  
-- [ ] **Calendario interactivo:**
-  - Vista mensual/semanal de citas
-  - Drag & drop para reagendar
-  
-- [ ] **Historial médico:**
-  - Registro de consultas previas
-  - Archivos adjuntos (recetas, exámenes)
-  
-- [ ] **Sistema de pagos:**
-  - Integración con pasarelas de pago
-  - Gestión de facturación
-  
-- [ ] **Chat en tiempo real:**
-  - Comunicación doctor-paciente
-  - Uso de Laravel Echo + Pusher
+**Sistema de notificaciones:**
+- Email al crear/confirmar/cancelar citas
+- Recordatorios automáticos 24h antes de la cita
 
-- [ ] **Reportes y estadísticas:**
-  - Dashboard con gráficos
-  - Exportación a PDF/Excel
+**Calendario interactivo:**
+- Vista mensual y semanal de citas
+- Funcionalidad drag & drop para reagendar
+
+**Historial médico:**
+- Registro de consultas previas del paciente
+- Sistema de archivos adjuntos (recetas, exámenes)
+
+**Sistema de pagos:**
+- Integración con pasarelas de pago
+- Gestión de facturación electrónica
+
+**Chat en tiempo real:**
+- Comunicación directa doctor-paciente
+- Uso de Laravel Echo + Pusher
+
+**Reportes y estadísticas:**
+- Dashboard con gráficos interactivos
+- Exportación a PDF y Excel
 
 ### 13.2. Técnicas
 
-- [ ] **API REST:**
-  - Endpoints para aplicaciones móviles
-  - Documentación con Swagger/OpenAPI
-  
-- [ ] **Testing automatizado:**
-  - Cobertura mínima del 80%
-  - CI/CD con GitHub Actions
-  
-- [ ] **Optimización:**
-  - Caché de consultas frecuentes
-  - Lazy loading de relaciones
-  - Paginación de listados
-  
-- [ ] **Seguridad:**
-  - Autenticación de dos factores (2FA)
-  - Logs de auditoría
-  - Rate limiting en API
+**API REST:**
+- Endpoints para aplicaciones móviles
+- Documentación con Swagger/OpenAPI
 
-- [ ] **DevOps:**
-  - Dockerización del proyecto
-  - Despliegue automatizado
-  - Monitoreo con Laravel Telescope
+**Testing automatizado:**
+- Cobertura mínima del 80%
+- Integración CI/CD con GitHub Actions
+
+**Optimización:**
+- Sistema de caché para consultas frecuentes
+- Lazy loading de relaciones Eloquent
+- Paginación eficiente de listados
+
+**Seguridad:**
+- Autenticación de dos factores (2FA)
+- Sistema de logs de auditoría
+- Rate limiting en API
+
+**DevOps:**
+- Dockerización completa del proyecto
+- Despliegue automatizado
+- Monitoreo con Laravel Telescope
 
 ---
 
