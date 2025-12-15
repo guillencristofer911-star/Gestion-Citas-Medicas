@@ -314,8 +314,8 @@ flowchart TD
     G --> C
     F -->|VÁLIDO| H[Crear sesión]
     H --> I{Usuario activo?}
-    I -->|NO| J[Usuario inactivo]
-    J --> G
+    I -->|NO| J[Mensaje:<br/>Usuario inactivo]
+    J --> C
     I -->|SI| K{Verificar rol}
     K -->|ADMIN| L[/admin/dashboard]
     K -->|DOCTOR| M[/doctor/dashboard]
@@ -369,10 +369,10 @@ flowchart TD
     I --> J{Validar:<br/>- doctor_id exists<br/>- day_of_week enum<br/>- start < end<br/>- interval > 0}
     J -->|INVÁLIDO| K[Retornar errores<br/>JSON 422]
     K --> F
-    J -->|VÁLIDO| L{Verificar<br/>solapamientos}
-    L -->|SOLAPA| M[Error:<br/>Horarios se solapan]
+    J -->|VÁLIDO| L{Verificar<br/>conflictos de horario}
+    L -->|CONFLICTO| M[Error:<br/>Horarios se superponen]
     M --> K
-    L -->|NO SOLAPA| N[Crear Schedule en BD]
+    L -->|SIN CONFLICTO| N[Crear Schedule en BD]
     N --> O[Retornar success<br/>con datos creados]
     O --> P[Actualizar lista<br/>de horarios AJAX]
     P --> Q[Notificación de éxito]
@@ -606,7 +606,7 @@ destroy(): Eliminar bloque de horario
 
 **Validaciones:**
 - Validar que `start_time < end_time`
-- Verificar que no existan solapamientos de horarios
+- Verificar que no existan conflictos de horarios
 - `interval_minutes` debe ser positivo
 
 #### Admin\UserController
