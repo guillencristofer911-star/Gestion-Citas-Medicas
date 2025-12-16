@@ -60,4 +60,53 @@ class UserController extends Controller
             ], 400);
         }
     }
+
+    /**
+     * Buscar/filtrar usuarios (AJAX)
+     */
+    public function search(Request $request)
+    {
+        $query = User::query();
+
+        // Buscar por nombre
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        // Buscar por email
+        if ($request->filled('email')) {
+            $query->where('email', 'like', '%' . $request->email . '%');
+        }
+
+        // Filtrar por rol
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        // Filtrar por estado
+        if ($request->filled('active')) {
+            $query->where('active', $request->boolean('active'));
+        }
+
+        $users = $query->orderBy('name')->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $users->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'active' => $user->active ?? true,
+                ];
+            }),
+            'pagination' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+            ]
+        ]);
+    }
 }
