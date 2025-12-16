@@ -59,15 +59,9 @@ Route::middleware(['auth', 'checkRole:admin'])->group(function () {
     // CRUD endpoints AJAX
     Route::prefix('admin')->name('admin.')->group(function () {
         // Doctors
-        Route::get('/doctors/{doctor}', [AdminDoctorController::class, 'show'])->name('doctors.show');
-        Route::get('/doctors/search', [AdminDoctorController::class, 'search'])->name('doctors.search');
         Route::post('/doctors/store', [AdminDoctorController::class, 'store'])->name('doctors.store');
         Route::put('/doctors/{doctor}', [AdminDoctorController::class, 'update'])->name('doctors.update');
         Route::delete('/doctors/{doctor}', [AdminDoctorController::class, 'destroy'])->name('doctors.destroy');
-        
-        // Appointments
-        Route::get('/appointments/{appointment}', [AdminAppointmentController::class, 'show'])->name('appointments.show');
-        Route::get('/appointments/search', [AdminAppointmentController::class, 'search'])->name('appointments.search');
         
         // Schedules
         Route::post('/schedules/store', [AdminScheduleController::class, 'store'])->name('schedules.store');
@@ -75,7 +69,6 @@ Route::middleware(['auth', 'checkRole:admin'])->group(function () {
         Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])->name('schedules.destroy');
         
         // Users
-        Route::get('/users/search', [AdminUserController::class, 'search'])->name('users.search');
         Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
