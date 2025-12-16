@@ -1,19 +1,21 @@
 <!DOCTYPE html>
-<!-- Laravel Blade Template -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>MediConnect - Dashboard</title>
-    <!-- CSS Compartido -->
+    <title>MediConnect - Dashboard Paciente</title>
+    
+    {{-- Hojas de Estilo --}}
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
 </head>
+
 <body>
     <div class="dashboard-container">
-        <!-- ==================== SIDEBAR ==================== -->
+        {{-- ==================== SIDEBAR ==================== --}}
         <div class="sidebar">
+            {{-- Logo Section --}}
             <div class="logo-section">
                 <div class="logo">
                     <div class="logo-icon">🏥</div>
@@ -21,34 +23,32 @@
                 </div>
             </div>
 
+            {{-- Menu Section --}}
             <div class="menu-section">
                 <div class="menu-title">Menú Principal</div>
                 
-                <!-- Dashboard Menu Item -->
                 <div class="menu-item active" data-section="dashboard">
                     <span class="menu-item-icon">📊</span>
                     <span>Dashboard</span>
                 </div>
                 
-                <!-- Médicos Menu Item -->
                 <div class="menu-item" data-section="doctors">
                     <span class="menu-item-icon">👨‍⚕️</span>
                     <span>Ver Médicos</span>
                 </div>
                 
-                <!-- Mis Citas Menu Item -->
                 <div class="menu-item" data-section="appointments">
                     <span class="menu-item-icon">📅</span>
                     <span>Mis Citas</span>
                 </div>
                 
-                <!-- Solicitar Cita Menu Item -->
                 <div class="menu-item" data-section="request-appointment">
                     <span class="menu-item-icon">➕</span>
                     <span>Solicitar Cita</span>
                 </div>
             </div>
 
+            {{-- User Profile Section --}}
             <div class="user-profile">
                 <div class="user-info">
                     <div class="user-avatar">👤</div>
@@ -57,6 +57,7 @@
                         <p>{{ $userRole }}</p>
                     </div>
                 </div>
+                
                 <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                     @csrf
                     <button type="submit" class="logout-btn-sidebar">Cerrar Sesión</button>
@@ -64,17 +65,17 @@
             </div>
         </div>
 
-        <!-- ==================== MAIN CONTENT ==================== -->
+        {{-- ==================== MAIN CONTENT ==================== --}}
         <div class="main-content">
+            {{-- Header --}}
             <div class="header">
                 <h1>Dashboard Paciente</h1>
             </div>
 
-            <!-- ==================== DASHBOARD SECTION ==================== -->
+            {{-- ==================== DASHBOARD SECTION ==================== --}}
             <div id="dashboard" class="content-section">
                 {{-- Tarjetas de Estadísticas --}}
                 <div class="stats-grid">
-                    {{-- Citas Próximas --}}
                     <div class="stat-card">
                         <div class="stat-icon blue">📅</div>
                         <div class="stat-content">
@@ -83,7 +84,6 @@
                         </div>
                     </div>
 
-                    {{-- Citas Confirmadas --}}
                     <div class="stat-card">
                         <div class="stat-icon green">✓</div>
                         <div class="stat-content">
@@ -92,7 +92,6 @@
                         </div>
                     </div>
 
-                    {{-- Citas Pendientes --}}
                     <div class="stat-card">
                         <div class="stat-icon orange">⏳</div>
                         <div class="stat-content">
@@ -154,7 +153,7 @@
                 </div>
             </div>
 
-            <!-- ==================== VER MÉDICOS SECTION ==================== -->
+            {{-- ==================== VER MÉDICOS SECTION ==================== --}}
             <div id="doctors" class="content-section" style="display:none;">
                 <div class="section-title">👨‍⚕️ Médicos Disponibles</div>
                 <div class="section">
@@ -173,18 +172,10 @@
                             <tbody>
                                 @forelse($doctors as $doctor)
                                     <tr>
-                                        <td>
-                                            <strong>{{ $doctor->user->name }}</strong>
-                                        </td>
-                                        <td>
-                                            <span class="specialty-badge">{{ $doctor->specialty }}</span>
-                                        </td>
-                                        <td>
-                                            <code>{{ $doctor->license_number }}</code>
-                                        </td>
-                                        <td>
-                                            <small>{{ Str::limit($doctor->biography ?? 'Sin información', 50) }}</small>
-                                        </td>
+                                        <td><strong>{{ $doctor->user->name }}</strong></td>
+                                        <td><span class="specialty-badge">{{ $doctor->specialty }}</span></td>
+                                        <td><code>{{ $doctor->license_number }}</code></td>
+                                        <td><small>{{ Str::limit($doctor->biography ?? 'Sin información', 50) }}</small></td>
                                         <td>
                                             @if($doctor->active)
                                                 <span class="status-badge status-confirmed">Disponible</span>
@@ -215,18 +206,17 @@
                 </div>
             </div>
 
-            <!-- ==================== MIS CITAS SECTION ==================== -->
+            {{-- ==================== MIS CITAS SECTION ==================== --}}
             <div id="appointments" class="content-section" style="display:none;">
                 <div class="section-title">📅 Historial de Citas</div>
                 
-                {{-- Mensaje de éxito --}}
+                {{-- Mensajes de Sistema --}}
                 @if(session('success'))
                     <div class="alert alert-success">
                         {{ session('success') }}
                     </div>
                 @endif
 
-                {{-- Mensaje de error --}}
                 @if(session('error'))
                     <div class="alert alert-danger">
                         {{ session('error') }}
@@ -280,7 +270,6 @@
                             </tbody>
                         </table>
 
-                        {{-- Paginación --}}
                         @if($allAppointments->hasPages())
                             <div class="pagination-wrapper">
                                 {{ $allAppointments->links() }}
@@ -294,14 +283,11 @@
                 </div>
             </div>
 
-            <!-- ==================== SOLICITAR CITA SECTION ==================== -->
+            {{-- ==================== SOLICITAR CITA SECTION ==================== --}}
             <div id="request-appointment" class="content-section" style="display:none;">
                 <div class="section-title">➕ Solicitar Nueva Cita</div>
                 <div class="section">
-                    {{-- Contenedor de alertas --}}
-                    <div id="alert-container"></div>
-
-                    {{-- Mostrar errores de validación --}}
+                    {{-- Errores de Validación --}}
                     @if($errors->any())
                         <div class="alert alert-danger" id="validation-errors">
                             <ul style="margin: 0; padding-left: 20px;">
@@ -312,9 +298,9 @@
                         </div>
                     @endif
 
-                    {{-- Formulario conectado a Laravel --}}
+                    {{-- Formulario de Solicitud --}}
                     <form method="POST" action="{{ route('appointments.store') }}" id="appointment-form">
-                        @csrf {{-- Token de seguridad obligatorio --}}
+                        @csrf
                         
                         <div class="form-group">
                             <label>Seleccionar Médico</label>
@@ -376,8 +362,11 @@
         </div>
     </div>
 
+    {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
-        // ========== AUTO-DESVANECIMIENTO DE ALERTAS ==========
+        /**
+         * Auto-desvanecimiento de alertas
+         */
         function setupAutoFadeAlerts(duration = 5000) {
             const alerts = document.querySelectorAll('.alert');
             
@@ -386,21 +375,17 @@
                 
                 setTimeout(() => {
                     alert.classList.add('fade-out');
-                    
-                    setTimeout(() => {
-                        alert.remove();
-                    }, 500);
+                    setTimeout(() => alert.remove(), 500);
                 }, alertDuration);
             });
         }
 
-        // ========== MANEJO DE SECCIONES ==========
+        /**
+         * Manejo de secciones del dashboard
+         */
         function showSection(sectionId) {
-            console.log('Mostrando sección:', sectionId);
-            
             // Ocultar todas las secciones
-            const allSections = document.querySelectorAll('.content-section');
-            allSections.forEach(section => {
+            document.querySelectorAll('.content-section').forEach(section => {
                 section.style.display = 'none';
             });
 
@@ -408,61 +393,27 @@
             const targetSection = document.getElementById(sectionId);
             if (targetSection) {
                 targetSection.style.display = 'block';
-            } else {
-                console.error('Sección no encontrada:', sectionId);
-                return;
             }
 
             // Actualizar menú activo
-            const menuItems = document.querySelectorAll('.menu-item');
-            menuItems.forEach(item => {
+            document.querySelectorAll('.menu-item').forEach(item => {
                 item.classList.remove('active');
-            });
-
-            // Encontrar y marcar como activo el menú correspondiente
-            menuItems.forEach(item => {
                 if (item.getAttribute('data-section') === sectionId) {
                     item.classList.add('active');
                 }
             });
         }
 
-        // ========== INICIALIZACIÓN ==========
-        window.addEventListener('load', function() {
-            setupAutoFadeAlerts(5000);
-
-            // Verificar si hay fragmento en la URL
-            const fragment = window.location.hash.substring(1);
-            
-            if (fragment && document.getElementById(fragment)) {
-                showSection(fragment);
-            } else {
-                showSection('dashboard');
-            }
-        });
-
-        // ========== EVENTOS DE MENÚ ==========
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuItems = document.querySelectorAll('.menu-item');
-            
-            menuItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const sectionId = this.getAttribute('data-section');
-                    showSection(sectionId);
-                });
-            });
-        });
-
-        // ========== CANCELAR CITA ==========
+        /**
+         * Cancelar cita médica
+         */
         function cancelAppointment(appointmentId) {
-            if(confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
+            if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `/citas/${appointmentId}/cancel`;
                 
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                
                 if (csrfToken) {
                     const tokenInput = document.createElement('input');
                     tokenInput.type = 'hidden';
@@ -476,7 +427,9 @@
             }
         }
 
-        // ========== SCROLL A FORMULARIO ==========
+        /**
+         * Scroll al formulario de solicitud
+         */
         function scrollToRequestForm() {
             showSection('request-appointment');
             setTimeout(() => {
@@ -486,6 +439,34 @@
                 }
             }, 100);
         }
+
+        /**
+         * Inicialización al cargar página
+         */
+        window.addEventListener('load', function() {
+            setupAutoFadeAlerts(5000);
+
+            // Verificar fragmento en la URL
+            const fragment = window.location.hash.substring(1);
+            if (fragment && document.getElementById(fragment)) {
+                showSection(fragment);
+            } else {
+                showSection('dashboard');
+            }
+        });
+
+        /**
+         * Eventos de menú
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const sectionId = this.getAttribute('data-section');
+                    showSection(sectionId);
+                });
+            });
+        });
     </script>
 </body>
 </html>
