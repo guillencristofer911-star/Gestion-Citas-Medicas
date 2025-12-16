@@ -1,18 +1,20 @@
 <!DOCTYPE html>
-<!-- Laravel Blade Template -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediConnect - Dashboard Admin</title>
-    <!-- CSS Compartido -->
+    
+    {{-- Hojas de Estilo --}}
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
 </head>
+
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
+        {{-- ==================== SIDEBAR ==================== --}}
         <div class="sidebar">
+            {{-- Logo Section --}}
             <div class="logo-section">
                 <div class="logo">
                     <div class="logo-icon">🥼</div>
@@ -20,26 +22,32 @@
                 </div>
             </div>
 
+            {{-- Menu Section --}}
             <div class="menu-section">
                 <div class="menu-title">Menú Principal</div>
+                
                 <div class="menu-item active" onclick="showSection('dashboard')">
                     <span class="menu-item-icon">📊</span>
                     <span>Dashboard</span>
                 </div>
+                
                 <div class="menu-item" onclick="showSection('doctors')">
                     <span class="menu-item-icon">👨‍⚕️</span>
                     <span>Gestionar Médicos</span>
                 </div>
+                
                 <div class="menu-item" onclick="showSection('appointments')">
                     <span class="menu-item-icon">📅</span>
                     <span>Todas las Citas</span>
                 </div>
+                
                 <div class="menu-item" onclick="showSection('users')">
                     <span class="menu-item-icon">👥</span>
                     <span>Gestionar Usuarios</span>
                 </div>
             </div>
 
+            {{-- User Profile Section --}}
             <div class="user-profile">
                 <div class="user-info">
                     <div class="user-avatar">⚙️</div>
@@ -48,6 +56,7 @@
                         <p>Administrador</p>
                     </div>
                 </div>
+                
                 <form action="{{ route('logout') }}" method="POST" style="width: 100%;">
                     @csrf
                     <button type="submit" class="logout-btn-sidebar">Cerrar Sesión</button>
@@ -55,17 +64,19 @@
             </div>
         </div>
 
-        <!-- Main Content -->
+        {{-- ==================== MAIN CONTENT ==================== --}}
         <div class="main-content">
+            {{-- Header --}}
             <div class="header">
                 <h1>Dashboard Administrador</h1>
             </div>
 
-            <!-- Alerts -->
+            {{-- Contenedor de Alertas --}}
             <div id="alertContainer"></div>
 
-            <!-- Dashboard Section -->
+            {{-- ==================== DASHBOARD SECTION ==================== --}}
             <div id="dashboard" class="content-section">
+                {{-- Tarjetas de Estadísticas --}}
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon blue">👥</div>
@@ -74,6 +85,7 @@
                             <p class="stat-number">{{ $totalDoctors }}</p>
                         </div>
                     </div>
+
                     <div class="stat-card">
                         <div class="stat-icon green">👤</div>
                         <div class="stat-content">
@@ -81,6 +93,7 @@
                             <p class="stat-number">{{ $totalPatients }}</p>
                         </div>
                     </div>
+
                     <div class="stat-card">
                         <div class="stat-icon orange">📅</div>
                         <div class="stat-content">
@@ -88,6 +101,7 @@
                             <p class="stat-number">{{ $totalAppointments }}</p>
                         </div>
                     </div>
+
                     <div class="stat-card">
                         <div class="stat-icon red">⏳</div>
                         <div class="stat-content">
@@ -97,6 +111,7 @@
                     </div>
                 </div>
 
+                {{-- Tabla: Resumen General --}}
                 <div class="section-title">📊 Resumen General del Sistema</div>
                 <div class="section">
                     <table>
@@ -133,13 +148,14 @@
                 </div>
             </div>
 
-            <!-- Gestionar Médicos Section -->
+            {{-- ==================== GESTIONAR MÉDICOS SECTION ==================== --}}
             <div id="doctors" class="content-section" style="display:none;">
                 <div class="section-title">👨‍⚕️ Gestión de Médicos</div>
                 <div class="section">
                     <div class="action-buttons">
                         <button class="btn btn-primary" onclick="openAddDoctorModal()">➕ Agregar Médico</button>
                     </div>
+
                     <table>
                         <thead>
                             <tr>
@@ -184,7 +200,7 @@
                 </div>
             </div>
 
-            <!-- Todas las Citas Section -->
+            {{-- ==================== TODAS LAS CITAS SECTION ==================== --}}
             <div id="appointments" class="content-section" style="display:none;">
                 <div class="section-title">📅 Todas las Citas del Sistema</div>
                 <div class="section">
@@ -231,7 +247,7 @@
                 </div>
             </div>
 
-            <!-- Gestionar Usuarios Section -->
+            {{-- ==================== GESTIONAR USUARIOS SECTION ==================== --}}
             <div id="users" class="content-section" style="display:none;">
                 <div class="section-title">👥 Gestión de Usuarios</div>
                 <div class="section">
@@ -290,13 +306,14 @@
         </div>
     </div>
 
-    <!-- Modal para agregar/editar médico -->
+    {{-- ==================== MODAL AGREGAR/EDITAR MÉDICO ==================== --}}
     <div id="doctorModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="doctorModalTitle">Agregar Nuevo Médico</h2>
                 <button class="close-modal" onclick="closeModal('doctorModal')">&times;</button>
             </div>
+
             <form id="doctorForm" onsubmit="submitDoctorForm(event)">
                 @csrf
                 <input type="hidden" id="doctorId" name="doctor_id">
@@ -334,11 +351,16 @@
         </div>
     </div>
 
+    {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                          '{{ csrf_token() }}';
+        /**
+         * Token CSRF para peticiones AJAX
+         */
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-        // Cambiar secciones
+        /**
+         * Cambiar entre secciones del dashboard
+         */
         function showSection(sectionId) {
             document.querySelectorAll('.content-section').forEach(section => {
                 section.style.display = 'none';
@@ -351,7 +373,9 @@
             event.target.closest('.menu-item').classList.add('active');
         }
 
-        // Mostrar alertas
+        /**
+         * Mostrar alertas temporales
+         */
         function showAlert(message, type = 'success') {
             const alertContainer = document.getElementById('alertContainer');
             const alertId = 'alert-' + Date.now();
@@ -361,14 +385,18 @@
                 </div>
             `;
             alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+            
             setTimeout(() => {
                 const alert = document.getElementById(alertId);
-                if(alert) alert.remove();
+                if (alert) alert.remove();
             }, 5000);
         }
 
-        // =================== MÉDICOS ===================
+        // ==================== GESTIÓN DE MÉDICOS ====================
 
+        /**
+         * Abrir modal para agregar nuevo médico
+         */
         function openAddDoctorModal() {
             document.getElementById('doctorModalTitle').textContent = 'Agregar Nuevo Médico';
             document.getElementById('doctorForm').reset();
@@ -378,6 +406,9 @@
             document.getElementById('doctorModal').classList.add('active');
         }
 
+        /**
+         * Editar médico existente
+         */
         function editDoctor(doctorId) {
             const row = document.querySelector(`tr[data-doctor-id="${doctorId}"]`);
             const cells = row.querySelectorAll('td');
@@ -394,6 +425,9 @@
             document.getElementById('doctorModal').classList.add('active');
         }
 
+        /**
+         * Enviar formulario de médico (crear o actualizar)
+         */
         function submitDoctorForm(event) {
             event.preventDefault();
 
@@ -416,7 +450,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                if(data.success) {
+                if (data.success) {
                     showAlert(data.message, 'success');
                     closeModal('doctorModal');
                     setTimeout(() => location.reload(), 1500);
@@ -430,8 +464,11 @@
             });
         }
 
+        /**
+         * Desactivar médico
+         */
         function deactivateDoctor(doctorId) {
-            if(confirm('¿Desactivar este médico?')) {
+            if (confirm('¿Desactivar este médico?')) {
                 fetch(`/admin/doctors/${doctorId}`, {
                     method: 'PUT',
                     headers: {
@@ -439,13 +476,11 @@
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        active: false
-                    })
+                    body: JSON.stringify({ active: false })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if(data.success) {
+                    if (data.success) {
                         showAlert(data.message, 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -459,8 +494,11 @@
             }
         }
 
+        /**
+         * Activar médico
+         */
         function activateDoctor(doctorId) {
-            if(confirm('¿Activar este médico?')) {
+            if (confirm('¿Activar este médico?')) {
                 fetch(`/admin/doctors/${doctorId}`, {
                     method: 'PUT',
                     headers: {
@@ -468,13 +506,11 @@
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        active: true
-                    })
+                    body: JSON.stringify({ active: true })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if(data.success) {
+                    if (data.success) {
                         showAlert('Médico activado correctamente', 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -488,16 +524,22 @@
             }
         }
 
-        // =================== CITAS ===================
+        // ==================== GESTIÓN DE CITAS ====================
 
+        /**
+         * Ver detalles de una cita
+         */
         function viewAppointment(appointmentId) {
             alert('Ver detalles de cita: ' + appointmentId);
         }
 
-        // =================== USUARIOS ===================
+        // ==================== GESTIÓN DE USUARIOS ====================
 
+        /**
+         * Desactivar usuario
+         */
         function deactivateUser(userId) {
-            if(confirm('¿Desactivar este usuario?')) {
+            if (confirm('¿Desactivar este usuario?')) {
                 fetch(`/admin/users/${userId}`, {
                     method: 'DELETE',
                     headers: {
@@ -507,7 +549,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if(data.success) {
+                    if (data.success) {
                         showAlert(data.message, 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -521,8 +563,11 @@
             }
         }
 
+        /**
+         * Activar usuario
+         */
         function activateUser(userId) {
-            if(confirm('¿Activar este usuario?')) {
+            if (confirm('¿Activar este usuario?')) {
                 fetch(`/admin/users/${userId}`, {
                     method: 'PUT',
                     headers: {
@@ -530,13 +575,11 @@
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        active: true
-                    })
+                    body: JSON.stringify({ active: true })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if(data.success) {
+                    if (data.success) {
                         showAlert('Usuario activado correctamente', 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
@@ -550,12 +593,18 @@
             }
         }
 
-        // =================== MODAL ===================
+        // ==================== GESTIÓN DE MODAL ====================
 
+        /**
+         * Cerrar modal
+         */
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
+        /**
+         * Cerrar modal al hacer clic fuera
+         */
         window.onclick = function(event) {
             const modal = event.target;
             if (modal.classList && modal.classList.contains('modal')) {
