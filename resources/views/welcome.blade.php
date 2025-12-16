@@ -6,8 +6,9 @@
     <title>MediConnect - Sistema de Citas Médicas</title>
     <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
 </head>
+
 <body>
-    <!-- Navbar -->
+    {{-- ==================== NAVBAR ==================== --}}
     <nav class="navbar">
         <div class="navbar-container">
             <a href="{{ route('welcome') }}" class="navbar-brand">
@@ -31,7 +32,7 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    {{-- ==================== HERO SECTION ==================== --}}
     <section class="hero">
         <div class="hero-container">
             <div class="hero-content">
@@ -59,7 +60,7 @@
         </div>
     </section>
 
-    <!-- Features Section -->
+    {{-- ==================== FEATURES SECTION ==================== --}}
     <section id="features" class="features">
         <div class="section-container">
             <div class="section-header">
@@ -107,7 +108,7 @@
         </div>
     </section>
 
-    <!-- Stats Section -->
+    {{-- ==================== STATS SECTION ==================== --}}
     <section id="benefits" class="stats">
         <div class="section-container">
             <div class="stats-grid">
@@ -131,7 +132,7 @@
         </div>
     </section>
 
-    <!-- CTA Section -->
+    {{-- ==================== CTA SECTION ==================== --}}
     <section id="contact" class="cta">
         <div class="section-container">
             <h2>¿Listo para comenzar?</h2>
@@ -148,7 +149,7 @@
         </div>
     </section>
 
-    <!-- Footer -->
+    {{-- ==================== FOOTER ==================== --}}
     <footer>
         <div class="footer-container">
             <div class="footer-col">

@@ -6,9 +6,11 @@
     <title>Iniciar Sesión - MediConnect</title>
     <link rel="stylesheet" href="{{ asset('css/Auth.css') }}">
 </head>
+
 <body>
     <div class="container">
-        <!-- Sección Izquierda - Información -->
+        {{-- ==================== SECCIÓN IZQUIERDA ==================== --}}
+        {{-- Información y características --}}
         <div class="left-section">
             <div class="left-content">
                 <div class="logo">MediConnect</div>
@@ -36,13 +38,14 @@
             </div>
         </div>
 
-        <!-- Sección Derecha - Formulario -->
+        {{-- ==================== SECCIÓN DERECHA ==================== --}}
+        {{-- Formulario de inicio de sesión --}}
         <div class="right-section">
             <div class="form-container">
                 <h1>Iniciar Sesión</h1>
                 <p>Accede a tu cuenta con tus credenciales</p>
 
-                <!-- Mostrar errores si existen -->
+                {{-- Mensajes de Error --}}
                 @if ($errors->any())
                     <div class="alert alert-error">
                         @foreach ($errors->all() as $error)
@@ -51,15 +54,16 @@
                     </div>
                 @endif
 
-                <!-- Mostrar mensajes de sesión -->
+                {{-- Mensajes de Éxito --}}
                 @if (session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
 
+                {{-- Formulario de Login --}}
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 
-                    <!-- Email -->
+                    {{-- Campo: Email --}}
                     <div class="form-group">
                         <label for="email">Correo Electrónico</label>
                         <input 
@@ -76,7 +80,7 @@
                         @enderror
                     </div>
 
-                    <!-- Password -->
+                    {{-- Campo: Contraseña --}}
                     <div class="form-group">
                         <label for="password">Contraseña</label>
                         <input 
@@ -92,7 +96,7 @@
                         @enderror
                     </div>
 
-                    <!-- Remember Me -->
+                    {{-- Opción: Recuérdame --}}
                     <div class="checkbox-group">
                         <div class="checkbox-wrapper">
                             <input 
@@ -105,13 +109,13 @@
                         </div>
                     </div>
 
-                    <!-- Botón Submit -->
+                    {{-- Botón de Submit --}}
                     <button type="submit" class="btn-primary btn-full">
                         Iniciar Sesión
                     </button>
                 </form>
 
-                <!-- Forgot Password y Register Links -->
+                {{-- Enlaces Adicionales --}}
                 <div class="form-footer">
                     @if (Route::has('password.request'))
                         <div style="margin-bottom: 10px;">

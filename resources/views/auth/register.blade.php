@@ -6,9 +6,11 @@
     <title>Registro - MediConnect</title>
     <link rel="stylesheet" href="{{ asset('css/Auth.css') }}">
 </head>
+
 <body>
     <div class="container">
-        <!-- Sección Izquierda - Información -->
+        {{-- ==================== SECCIÓN IZQUIERDA ==================== --}}
+        {{-- Información y características --}}
         <div class="left-section">
             <div class="left-content">
                 <div class="logo">MediConnect</div>
@@ -36,13 +38,14 @@
             </div>
         </div>
 
-        <!-- Sección Derecha - Formulario -->
+        {{-- ==================== SECCIÓN DERECHA ==================== --}}
+        {{-- Formulario de registro --}}
         <div class="right-section">
             <div class="form-container">
                 <h1>Crear Cuenta</h1>
                 <p>Completa los datos para registrarte</p>
 
-                <!-- Mostrar errores si existen -->
+                {{-- Mensajes de Error --}}
                 @if ($errors->any())
                     <div class="alert alert-error">
                         @foreach ($errors->all() as $error)
@@ -51,15 +54,16 @@
                     </div>
                 @endif
 
-                <!-- Mostrar mensajes de sesión -->
+                {{-- Mensajes de Éxito --}}
                 @if (session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
 
+                {{-- Formulario de Registro --}}
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
 
-                    <!-- Nombre Completo -->
+                    {{-- Campo: Nombre Completo --}}
                     <div class="form-group">
                         <label for="name">Nombre Completo</label>
                         <input 
@@ -76,7 +80,7 @@
                         @enderror
                     </div>
 
-                    <!-- Email -->
+                    {{-- Campo: Email --}}
                     <div class="form-group">
                         <label for="email">Correo Electrónico</label>
                         <input 
@@ -93,7 +97,7 @@
                         @enderror
                     </div>
 
-                    <!-- Password -->
+                    {{-- Campo: Contraseña --}}
                     <div class="form-group">
                         <label for="password">Contraseña</label>
                         <input 
@@ -109,7 +113,7 @@
                         @enderror
                     </div>
 
-                    <!-- Confirmar Password -->
+                    {{-- Campo: Confirmar Contraseña --}}
                     <div class="form-group">
                         <label for="password_confirmation">Confirmar Contraseña</label>
                         <input 
@@ -121,7 +125,7 @@
                         >
                     </div>
 
-                    <!-- Aceptar Términos -->
+                    {{-- Opción: Aceptar Términos --}}
                     <div class="checkbox-group">
                         <div class="checkbox-wrapper">
                             <input 
@@ -140,13 +144,13 @@
                         <div class="error-message">{{ $message }}</div>
                     @enderror
 
-                    <!-- Botón Submit -->
+                    {{-- Botón de Submit --}}
                     <button type="submit" class="btn-primary btn-full">
                         Crear Cuenta
                     </button>
                 </form>
 
-                <!-- Login Link -->
+                {{-- Enlace de Login --}}
                 <div class="form-footer">
                     <p>¿Ya tienes cuenta? <a href="{{ route('login') }}">Inicia sesión aquí</a></p>
                 </div>
