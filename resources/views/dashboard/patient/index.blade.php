@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>MediConnect - Dashboard Paciente</title>
     
-    {{-- Hojas de Estilo --}}
+    {{-- ==================== HOJAS DE ESTILO ==================== --}}
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
 </head>
@@ -48,7 +48,7 @@
                 </div>
             </div>
 
-            {{-- User Profile Section --}}
+            {{-- Perfil de Usuario --}}
             <div class="user-profile">
                 <div class="user-info">
                     <div class="user-avatar">👤</div>
@@ -65,14 +65,14 @@
             </div>
         </div>
 
-        {{-- ==================== MAIN CONTENT ==================== --}}
+        {{-- ==================== CONTENIDO PRINCIPAL ==================== --}}
         <div class="main-content">
-            {{-- Header --}}
+            {{-- Encabezado --}}
             <div class="header">
                 <h1>Dashboard Paciente</h1>
             </div>
 
-            {{-- ==================== DASHBOARD SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: DASHBOARD ==================== --}}
             <div id="dashboard" class="content-section">
                 {{-- Tarjetas de Estadísticas --}}
                 <div class="stats-grid">
@@ -153,7 +153,7 @@
                 </div>
             </div>
 
-            {{-- ==================== VER MÉDICOS SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: VER MÉDICOS ==================== --}}
             <div id="doctors" class="content-section" style="display:none;">
                 <div class="section-title">👨‍⚕️ Médicos Disponibles</div>
                 <div class="section">
@@ -206,7 +206,7 @@
                 </div>
             </div>
 
-            {{-- ==================== MIS CITAS SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: MIS CITAS ==================== --}}
             <div id="appointments" class="content-section" style="display:none;">
                 <div class="section-title">📅 Historial de Citas</div>
                 
@@ -283,7 +283,7 @@
                 </div>
             </div>
 
-            {{-- ==================== SOLICITAR CITA SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: SOLICITAR CITA ==================== --}}
             <div id="request-appointment" class="content-section" style="display:none;">
                 <div class="section-title">➕ Solicitar Nueva Cita</div>
                 <div class="section">
@@ -365,7 +365,10 @@
     {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
         /**
-         * Auto-desvanecimiento de alertas
+         * ==================== GESTIÓN DE ALERTAS ====================
+         * Auto-desvanecimiento de mensajes de sistema
+         * 
+         * @param {number} duration - Duración en milisegundos antes de desvanecer
          */
         function setupAutoFadeAlerts(duration = 5000) {
             const alerts = document.querySelectorAll('.alert');
@@ -381,7 +384,10 @@
         }
 
         /**
-         * Manejo de secciones del dashboard
+         * ==================== NAVEGACIÓN DE SECCIONES ====================
+         * Manejo de cambio entre secciones del dashboard
+         * 
+         * @param {string} sectionId - ID de la sección a mostrar
          */
         function showSection(sectionId) {
             // Ocultar todas las secciones
@@ -405,7 +411,10 @@
         }
 
         /**
+         * ==================== GESTIÓN DE CITAS ====================
          * Cancelar cita médica
+         * 
+         * @param {number} appointmentId - ID de la cita a cancelar
          */
         function cancelAppointment(appointmentId) {
             if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
@@ -428,7 +437,8 @@
         }
 
         /**
-         * Scroll al formulario de solicitud
+         * ==================== NAVEGACIÓN AUXILIAR ====================
+         * Navega y hace scroll al formulario de solicitud de cita
          */
         function scrollToRequestForm() {
             showSection('request-appointment');
@@ -441,9 +451,11 @@
         }
 
         /**
-         * Inicialización al cargar página
+         * ==================== INICIALIZACIÓN ====================
+         * Configuración inicial al cargar la página
          */
         window.addEventListener('load', function() {
+            // Configurar auto-desvanecimiento de alertas
             setupAutoFadeAlerts(5000);
 
             // Verificar fragmento en la URL
@@ -456,7 +468,8 @@
         });
 
         /**
-         * Eventos de menú
+         * ==================== EVENTOS DE MENÚ ====================
+         * Manejo de clicks en items del menú
          */
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.menu-item').forEach(item => {
