@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>MediConnect - Dashboard Médico</title>
     
-    {{-- Hojas de Estilo --}}
+    {{-- ==================== HOJAS DE ESTILO ==================== --}}
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/schedule.css') }}">
     <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
@@ -44,7 +44,7 @@
                 </div>
             </div>
 
-            {{-- User Profile Section --}}
+            {{-- Perfil de Usuario --}}
             <div class="user-profile">
                 <div class="user-info">
                     <div class="user-avatar">👨‍⚕️</div>
@@ -61,14 +61,14 @@
             </div>
         </div>
 
-        {{-- ==================== MAIN CONTENT ==================== --}}
+        {{-- ==================== CONTENIDO PRINCIPAL ==================== --}}
         <div class="main-content">
-            {{-- Header --}}
+            {{-- Encabezado --}}
             <div class="header">
                 <h1>Dashboard Médico</h1>
             </div>
 
-            {{-- ==================== DASHBOARD SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: DASHBOARD ==================== --}}
             <div id="dashboard" class="content-section">
                 {{-- Tarjetas de Estadísticas --}}
                 <div class="stats-grid">
@@ -155,7 +155,7 @@
                 </div>
             </div>
 
-            {{-- ==================== MIS CITAS SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: MIS CITAS ==================== --}}
             <div id="appointments" class="content-section" style="display:none;">
                 <div class="section-title">📅 Todas Mis Citas</div>
                 <div class="section">
@@ -214,7 +214,7 @@
                 </div>
             </div>
 
-            {{-- ==================== MI AGENDA SECTION ==================== --}}
+            {{-- ==================== SECCIÓN: MI AGENDA ==================== --}}
             <div id="schedule" class="content-section" style="display:none;">
                 <div class="section-title">⏰ Mi Agenda de Atención</div>
                 
@@ -381,7 +381,7 @@
         </div>
     </div>
 
-    {{-- ==================== MODAL CAMBIAR ESTADO ==================== --}}
+    {{-- ==================== MODAL: CAMBIAR ESTADO ==================== --}}
     <div id="statusModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -423,12 +423,15 @@
     {{-- ==================== JAVASCRIPT ==================== --}}
     <script>
         /**
-         * Variables Globales
+         * ==================== VARIABLES GLOBALES ====================
          */
         let currentView = 'daily';
 
         /**
-         * Cambiar secciones del dashboard
+         * ==================== NAVEGACIÓN DE SECCIONES ====================
+         * Cambia entre las diferentes secciones del dashboard
+         * 
+         * @param {string} sectionId - ID de la sección a mostrar
          */
         function showSection(sectionId) {
             document.querySelectorAll('.content-section').forEach(section => {
@@ -444,7 +447,12 @@
         }
 
         /**
-         * Abrir modal de cambio de estado
+         * ==================== GESTIÓN DE MODAL ====================
+         * Abre el modal para cambiar estado de cita
+         * 
+         * @param {string} patientName - Nombre del paciente
+         * @param {string} time - Hora de la cita
+         * @param {number} appointmentId - ID de la cita
          */
         function openStatusModal(patientName, time, appointmentId) {
             document.getElementById('patientName').textContent = patientName;
@@ -454,7 +462,7 @@
         }
 
         /**
-         * Cerrar modal
+         * Cierra el modal y limpia los campos
          */
         function closeModal() {
             document.getElementById('statusModal').classList.remove('active');
@@ -463,7 +471,10 @@
         }
 
         /**
-         * Actualizar estado de cita
+         * ==================== ACTUALIZACIÓN DE ESTADO ====================
+         * Envía petición AJAX para actualizar estado de cita
+         * 
+         * @param {Event} event - Evento del formulario
          */
         function updateStatus(event) {
             event.preventDefault();
@@ -521,7 +532,10 @@
         }
 
         /**
-         * Mostrar vista de agenda (diaria/semanal)
+         * ==================== VISTAS DE AGENDA ====================
+         * Cambia entre vista diaria y semanal
+         * 
+         * @param {string} view - Tipo de vista ('daily' o 'weekly')
          */
         function showScheduleView(view) {
             currentView = view;
@@ -541,7 +555,7 @@
         }
 
         /**
-         * Actualizar vista de agenda
+         * Actualiza la vista de agenda según fecha seleccionada
          */
         function updateScheduleView() {
             const selectedDate = document.getElementById('scheduleDate').value;
@@ -550,7 +564,8 @@
         }
 
         /**
-         * Actualizar hora actual
+         * ==================== GESTIÓN DE TIEMPO ====================
+         * Actualiza la hora actual mostrada
          */
         function updateCurrentTime() {
             const now = new Date();
@@ -560,7 +575,7 @@
         }
 
         /**
-         * Actualizar indicador de hora actual
+         * Actualiza el indicador visual de hora actual
          */
         function updateCurrentTimeIndicator() {
             const now = new Date();
@@ -577,7 +592,7 @@
         }
 
         /**
-         * Inicializar línea de tiempo diaria
+         * Inicializa la línea de tiempo diaria con scroll automático
          */
         function initDailyTimeline() {
             const timeSlots = document.querySelectorAll('.timeline-slot');
@@ -593,7 +608,8 @@
         }
 
         /**
-         * Cerrar modal al hacer clic fuera
+         * ==================== EVENTOS ====================
+         * Cierra modal al hacer clic fuera del contenido
          */
         window.onclick = function(event) {
             const modal = document.getElementById('statusModal');
@@ -603,7 +619,8 @@
         };
 
         /**
-         * Inicialización al cargar página
+         * ==================== INICIALIZACIÓN ====================
+         * Configuración inicial al cargar la página
          */
         document.addEventListener('DOMContentLoaded', function() {
             setInterval(updateCurrentTime, 60000);
