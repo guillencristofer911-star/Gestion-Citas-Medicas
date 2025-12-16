@@ -15,6 +15,9 @@ class DoctorDashboardController extends Controller
         $this->middleware('auth');
     }
 
+    /**
+     * Muestra el dashboard del doctor con estadísticas y agenda
+     */
     public function index(): View
     {
         $user = Auth::user();
@@ -24,16 +27,20 @@ class DoctorDashboardController extends Controller
             abort(403, 'Acceso no autorizado.');
         }
         
-        // Estadísticas
+        // Estadísticas generales
         $totalAppointments = $doctor->appointments()->count();
         $pendingAppointments = $doctor->appointments()
-            ->where('status', 'pending')->count();
+            ->where('status', 'pending')
+            ->count();
         $confirmedAppointments = $doctor->appointments()
-            ->where('status', 'confirmed')->count();
+            ->where('status', 'confirmed')
+            ->count();
         $attendedAppointments = $doctor->appointments()
-            ->where('status', 'attended')->count();
+            ->where('status', 'attended')
+            ->count();
         $upcomingAppointments = $doctor->appointments()
-            ->where('appointment_date_time', '>=', now())->count();
+            ->where('appointment_date_time', '>=', now())
+            ->count();
 
         // Próximas citas
         $upcomingList = $doctor->appointments()
@@ -56,9 +63,7 @@ class DoctorDashboardController extends Controller
         ];
         $userRole = $roleTranslations[$user->role] ?? $user->role;
 
-        // ===== NUEVO: DATOS PARA MI AGENDA (RF-13) =====
-        
-        // Datos para vista diaria
+        // RF-13: Datos para Mi Agenda (vista diaria)
         $todayDate = Carbon::now()->format('Y-m-d');
         $dailySchedule = $this->generateDailySchedule($doctor->id, $todayDate);
         $todayAppointments = $doctor->appointments()
@@ -66,7 +71,7 @@ class DoctorDashboardController extends Controller
             ->count();
         $todayAvailability = $this->calculateAvailableHours($doctor->id, $todayDate);
         
-        // Datos para vista semanal
+        // RF-13: Datos para Mi Agenda (vista semanal)
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
         
@@ -165,7 +170,7 @@ class DoctorDashboardController extends Controller
             // Determinar si es día laboral (lunes a viernes = 1 a 5)
             $isWorkDay = in_array($dayOfWeek, [1, 2, 3, 4, 5]);
             
-            // Calcular horas de atención
+            // Calcular horas de atención según el día
             if ($dayOfWeek == 5) { // Viernes
                 $startHour = '08:00';
                 $endHour = '16:00';
@@ -202,7 +207,7 @@ class DoctorDashboardController extends Controller
     }
 
     /**
-     * Calcula las horas disponibles en un día
+     * Calcula las horas disponibles en un día específico
      */
     private function calculateAvailableHours($doctorId, $date)
     {
@@ -227,6 +232,10 @@ class DoctorDashboardController extends Controller
         return $availableHours . ' hrs';
     }
 
+    /**
+     * Actualiza el estado de una cita médica
+     * Solo permite al doctor dueño de la cita modificarla
+     */
     public function updateAppointmentStatus(Request $request, Appointment $appointment)
     {
         // Validar que el doctor autenticado sea el dueño de esta cita

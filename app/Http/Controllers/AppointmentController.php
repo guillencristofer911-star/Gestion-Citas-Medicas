@@ -9,63 +9,61 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StoreAppointmentRequest;
 
-
-
 class AppointmentController extends Controller
 {
-
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-//guarda una neva cita, recibe datos del formulario y guarda en BD
+    /**
+     * Guarda una nueva cita médica
+     * Recibe datos del formulario y guarda en la base de datos
+     */
+    public function store(StoreAppointmentRequest $request): RedirectResponse
+    {
+        // Combinar fecha y hora
+        $appointment_date_time = $request->appointment_date . ' ' . $request->appointment_time;
 
-public function store (StoreAppointmentRequest $request): RedirectResponse
-{
+        // Crear nueva cita
+        Appointment::create([
+            'patient_id' => Auth::id(),
+            'doctor_id' => $request->doctor_id,
+            'appointment_date_time' => $appointment_date_time,
+            'description' => $request->consultation_reason,
+            'status' => 'pending',
+        ]);
 
-    
-    //combinar fecha y hora
-    $appointment_date_time = $request->appointment_date . ' ' . $request->appointment_time;
+        // Redirigir con mensaje de éxito
+        return redirect()
+            ->to(route('patient.dashboard') . '#appointments')
+            ->with('success', 'Cita médica solicitada exitosamente.');
+    }
 
-    //crear nueva cita
-    Appointment::create([
-        'patient_id' => Auth::id(),
-        'doctor_id' => $request->doctor_id,
-        'appointment_date_time' => $appointment_date_time,
-        'description' => $request->consultation_reason,
-        'status' => 'pending',
-    ]);
-
-    //Redirigir con mensaje de éxito
-    return redirect() ->to (route ('patient.dashboard') . '#appointments')
-    ->with ('success', 'Cita médica solicitada exitosamente.');
-}
-
-
-
-    //cancelar citas
+    /**
+     * Cancelar una cita médica
+     * Solo permite cancelar citas pendientes o confirmadas
+     */
     public function cancel(Appointment $appointment): RedirectResponse
     {
-        //verificar que la cita pertenece al paciente autenticado
-        
-        if ($appointment->patient_id !== Auth::id()){
+        // Verificar que la cita pertenece al paciente autenticado
+        if ($appointment->patient_id !== Auth::id()) {
             abort(403, 'No autorizado para cancelar esta cita.');
         }
 
-        //solo puede cancelar citas pendientes o confirmadas
-        if (!in_array ($appointment->status, ['pending', 'confirmed'])){
-            return redirect ()
-            ->back ()
-            ->with ('error', 'Solo se pueden cancelar citas pendientes o confirmadas.');
-            
+        // Solo puede cancelar citas pendientes o confirmadas
+        if (!in_array($appointment->status, ['pending', 'confirmed'])) {
+            return redirect()
+                ->back()
+                ->with('error', 'Solo se pueden cancelar citas pendientes o confirmadas.');
         }
 
-        //cambiar estado a cancelada
+        // Cambiar estado a cancelada
         $appointment->status = 'canceled';
         $appointment->save();
 
-        return redirect() ->to(route ('patient.dashboard') . '#appointments')
-        ->with ('success', 'Cita médica cancelada exitosamente.');
+        return redirect()
+            ->to(route('patient.dashboard') . '#appointments')
+            ->with('success', 'Cita médica cancelada exitosamente.');
     }
 }
