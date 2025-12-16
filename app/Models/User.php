@@ -3,17 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Atributos asignables en masa
+     *
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
@@ -24,7 +26,9 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Atributos que deben ocultarse en la serialización
+     *
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -32,7 +36,9 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Atributos que deben ser convertidos a tipos nativos
+     *
+     * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
@@ -40,7 +46,10 @@ class User extends Authenticatable
     ];
 
     /**
-     * Relación con Doctor (si el usuario es médico)
+     * Relación uno a uno con Doctor
+     * Un usuario puede ser un doctor
+     *
+     * @return HasOne
      */
     public function doctor(): HasOne
     {
@@ -48,7 +57,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Relación con Appointments (como paciente)
+     * Relación uno a muchos con Appointment
+     * Un usuario (paciente) puede tener muchas citas
+     *
+     * @return HasMany
      */
     public function appointments(): HasMany
     {
