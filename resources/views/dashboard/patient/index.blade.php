@@ -363,39 +363,102 @@
     </div>
 
     {{-- ==================== JAVASCRIPT ==================== --}}
-    <script>
-        /**
-         * ==================== GESTIÓN DE ALERTAS ====================
-         * Auto-desvanecimiento de mensajes de sistema
-         * 
-         * @param {number} duration - Duración en milisegundos antes de desvanecer
-         */
-        function setupAutoFadeAlerts(duration = 5000) {
-            const alerts = document.querySelectorAll('.alert');
+<script>
+    /**
+     * ==================== GESTIÓN DE ALERTAS ====================
+     */
+    function setupAutoFadeAlerts(duration = 5000) {
+        const alerts = document.querySelectorAll('.alert');
+        
+        alerts.forEach(alert => {
+            const alertDuration = alert.classList.contains('alert-danger') ? duration * 1.5 : duration;
             
-            alerts.forEach(alert => {
-                const alertDuration = alert.classList.contains('alert-danger') ? duration * 1.5 : duration;
-                
-                setTimeout(() => {
-                    alert.classList.add('fade-out');
-                    setTimeout(() => alert.remove(), 500);
-                }, alertDuration);
-            });
+            setTimeout(() => {
+                alert.classList.add('fade-out');
+                setTimeout(() => alert.remove(), 500);
+            }, alertDuration);
+        });
+    }
+
+    /**
+     * ==================== NAVEGACIÓN DE SECCIONES CON URL ====================
+     * 
+     */
+    function showSection(sectionId) {
+        // Ocultar todas las secciones
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.style.display = 'none';
+        });
+
+        // Mostrar la sección seleccionada
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            targetSection.style.display = 'block';
         }
 
-        /**
-         * ==================== NAVEGACIÓN DE SECCIONES ====================
-         * Manejo de cambio entre secciones del dashboard
-         * 
-         * @param {string} sectionId - ID de la sección a mostrar
-         */
-        function showSection(sectionId) {
+        // Actualizar menú activo
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('data-section') === sectionId) {
+                item.classList.add('active');
+            }
+        });
+
+        //  Actualizar URL sin recargar la página
+        const newUrl = `{{ route('patient.dashboard') }}?section=${sectionId}`;
+        window.history.pushState({section: sectionId}, '', newUrl);
+    }
+
+    /**
+     * ==================== GESTIÓN DE CITAS ====================
+     */
+    function cancelAppointment(appointmentId) {
+        if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/citas/${appointmentId}/cancel`;
+            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (csrfToken) {
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '_token';
+                tokenInput.value = csrfToken;
+                form.appendChild(tokenInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    /**
+     * ==================== NAVEGACIÓN AUXILIAR ====================
+     */
+    function scrollToRequestForm() {
+        showSection('request-appointment');
+        setTimeout(() => {
+            const section = document.querySelector('#request-appointment');
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
+    }
+
+    /**
+     * ==================== MANEJO DE NAVEGADOR (Atrás/Adelante) ====================
+     *  Detecta cuando el usuario usa botones del navegador
+     */
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.section) {
+            const sectionId = event.state.section;
+            
             // Ocultar todas las secciones
             document.querySelectorAll('.content-section').forEach(section => {
                 section.style.display = 'none';
             });
 
-            // Mostrar la sección seleccionada
+            // Mostrar la sección guardada
             const targetSection = document.getElementById(sectionId);
             if (targetSection) {
                 targetSection.style.display = 'block';
@@ -409,77 +472,57 @@
                 }
             });
         }
+    });
 
-        /**
-         * ==================== GESTIÓN DE CITAS ====================
-         * Cancelar cita médica
-         * 
-         * @param {number} appointmentId - ID de la cita a cancelar
-         */
-        function cancelAppointment(appointmentId) {
-            if (confirm('¿Estás seguro de que deseas cancelar esta cita?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/citas/${appointmentId}/cancel`;
-                
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                if (csrfToken) {
-                    const tokenInput = document.createElement('input');
-                    tokenInput.type = 'hidden';
-                    tokenInput.name = '_token';
-                    tokenInput.value = csrfToken;
-                    form.appendChild(tokenInput);
-                }
-                
-                document.body.appendChild(form);
-                form.submit();
+    /**
+     * ==================== INICIALIZACIÓN ====================
+     */
+    window.addEventListener('load', function() {
+        //  Leer sección desde URL (?section=appointments)
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionParam = urlParams.get('section');
+        
+        //  Determinar qué sección mostrar
+        let initialSection = 'dashboard'; // Valor por defecto
+        
+        // Prioridad 1: Si hay errores de validación, mostrar formulario
+        @if($errors->any())
+            initialSection = 'request-appointment';
+        // Prioridad 2: Si hay mensaje de éxito, mostrar Mis Citas
+        @elseif(session('success'))
+            initialSection = 'appointments';
+        // Prioridad 3: Si hay parámetro en la URL, usarlo
+        @else
+            if (sectionParam && document.getElementById(sectionParam)) {
+                initialSection = sectionParam;
             }
-        }
+        @endif
+        
+        // Mostrar la sección determinada
+        showSection(initialSection);
 
-        /**
-         * ==================== NAVEGACIÓN AUXILIAR ====================
-         * Navega y hace scroll al formulario de solicitud de cita
-         */
-        function scrollToRequestForm() {
-            showSection('request-appointment');
-            setTimeout(() => {
-                const section = document.querySelector('#request-appointment');
-                if (section) {
-                    section.scrollIntoView({ behavior: 'smooth' });
-                }
-            }, 100);
-        }
+        //  Guardar estado inicial en el historial
+        window.history.replaceState({section: initialSection}, '', window.location.href);
 
-        /**
-         * ==================== INICIALIZACIÓN ====================
-         * Configuración inicial al cargar la página
-         */
-        window.addEventListener('load', function() {
-            // Configurar auto-desvanecimiento de alertas
-            setupAutoFadeAlerts(5000);
+        //  Configurar auto-desvanecimiento de alertas DESPUÉS de mostrar la sección
+        setupAutoFadeAlerts(5000);
+    });
 
-            // Verificar fragmento en la URL
-            const fragment = window.location.hash.substring(1);
-            if (fragment && document.getElementById(fragment)) {
-                showSection(fragment);
-            } else {
-                showSection('dashboard');
-            }
-        });
 
-        /**
-         * ==================== EVENTOS DE MENÚ ====================
-         * Manejo de clicks en items del menú
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const sectionId = this.getAttribute('data-section');
-                    showSection(sectionId);
-                });
+
+    /**
+     * ==================== EVENTOS DE MENÚ ====================
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = this.getAttribute('data-section');
+                showSection(sectionId);
             });
         });
-    </script>
+    });
+</script>
+
 </body>
 </html>

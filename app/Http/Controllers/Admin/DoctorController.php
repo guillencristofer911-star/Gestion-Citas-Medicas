@@ -7,9 +7,12 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
 {
+
+
     /**
      * Display a listing of the resource.
      */
@@ -122,5 +125,49 @@ class DoctorController extends Controller
         $doctor->update(['active' => false]);
         return redirect()->route('admin.doctors.index')
             ->with('success', 'Doctor desactivado exitosamente.');
+    }
+
+        /**
+     * Alternar estado inactivo/activo 
+     */
+
+    public function toggleStatus(Request $request, Doctor $doctor)
+    {
+
+        $validate = $request->validate([
+            'active' => 'required|boolean',
+            'section' => 'required|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $doctor->update ([
+                'active' => $validate['active']
+            ]); 
+            if ($doctor->user){
+                $doctor->user->update([
+                    'active' => $validate['active']
+                ]);
+            }
+
+            DB::commit();
+
+            $message = $validate['active']
+            ? 'Médico activado exitosamente.'
+            : 'Médico desactivado exitosamente.';
+
+            $section = $validate['section'] ?? 'doctors';
+            return redirect()
+            ->route('admin.dashboard', ['section' => $section])
+             ->with('success', $message);
+            
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+            ->back()
+            ->with('error', 'Error al actualizar el estado del médico: ' . $e->getMessage());
+        }
     }
 }

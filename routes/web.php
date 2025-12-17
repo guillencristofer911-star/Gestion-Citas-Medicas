@@ -68,7 +68,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'checkRole:patient'])->prefix('paciente')->name('patient.')->group(function () {
     Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
-});
+  });
+
 
 // ==================== DASHBOARD MÉDICO ====================
 // Rutas exclusivas para usuarios con rol 'doctor'
@@ -98,7 +99,7 @@ Route::middleware(['auth', 'checkRole:admin'])->group(function () {
         Route::post('/doctors/store', [AdminDoctorController::class, 'store'])->name('doctors.store');
         Route::put('/doctors/{doctor}', [AdminDoctorController::class, 'update'])->name('doctors.update');
         Route::delete('/doctors/{doctor}', [AdminDoctorController::class, 'destroy'])->name('doctors.destroy');
-        
+        Route::patch('/doctors/{doctor}/toggle', [AdminDoctorController::class, 'toggleStatus'])->name('doctors.toggle');
         // Gestión de Horarios
         Route::post('/schedules/store', [AdminScheduleController::class, 'store'])->name('schedules.store');
         Route::put('/schedules/{schedule}', [AdminScheduleController::class, 'update'])->name('schedules.update');
