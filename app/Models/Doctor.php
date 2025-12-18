@@ -5,14 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Doctor extends Model
 {
-    /**
-     * Atributos asignables en masa
-     *
-     * @var array<int, string>
-     */
+    use SoftDeletes;
     protected $fillable = [
         'user_id',
         'license_number',
@@ -29,6 +26,7 @@ class Doctor extends Model
      */
     protected $casts = [
         'active' => 'boolean',
+        'deleted_at' => 'datetime',
     ];
 
     /**
