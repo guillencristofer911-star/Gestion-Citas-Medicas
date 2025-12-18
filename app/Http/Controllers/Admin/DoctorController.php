@@ -14,6 +14,7 @@ class DoctorController extends Controller
 
 
 
+
     public function index()
     {
         $doctors = Doctor::with('user')->paginate(20);
@@ -76,7 +77,7 @@ class DoctorController extends Controller
                 ]);
             }
 
-            // Validación normal para edición completa
+            // Validación normal para edición completa (Hacer request completo)
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'specialty' => 'required|string|max:255',
@@ -102,11 +103,6 @@ class DoctorController extends Controller
             ], 400);
         }
     }
-
-
-
-
-
 
     public function destroy(Doctor $doctor)
     {

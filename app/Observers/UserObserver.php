@@ -18,7 +18,7 @@ class UserObserver
      */
     public function updated(User $user): void
     {
-     
+
     }
 
     /**
@@ -26,7 +26,9 @@ class UserObserver
      */
     public function deleted(User $user): void
     {
-        //
+        $user->update([
+            'active'=> false
+        ]);
     }
 
     /**
@@ -34,7 +36,9 @@ class UserObserver
      */
     public function restored(User $user): void
     {
-        //
+        $user->update([
+        'active'=> true 
+      ]);
     }
 
     /**
