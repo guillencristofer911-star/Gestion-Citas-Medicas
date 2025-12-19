@@ -7,11 +7,9 @@
 3. [Observers y Eventos](#observers-y-eventos)
 4. [Soft Deletes](#soft-deletes)
 5. [Middleware y Autorización](#middleware-y-autorización)
-6. [Validaciones Personalizadas](#validaciones-personalizadas)
-7. [Flujos de Negocio](#flujos-de-negocio)
-8. [Gestión de Estados](#gestión-de-estados)
-9. [Optimizaciones y Performance](#optimizaciones-y-performance)
-10. [Seguridad Avanzada](#seguridad-avanzada)
+6. [Diagramas de Flujo](#diagramas-de-flujo)
+7. [Gestion de Estados](#gestión-de-estados)
+8. [Implementación Real del Proyecto](#implementación-real-del-proyecto)
 
 ---
 
@@ -205,7 +203,6 @@ class User extends Authenticatable
 
     /**
      * Relación 1:1 con Doctor
-     * Un usuario puede ser un doctor (pero no todos los usuarios son doctores)
      */
     public function doctor()
     {
@@ -214,7 +211,6 @@ class User extends Authenticatable
 
     /**
      * Relación 1:N con Appointments (como paciente)
-     * Un usuario (paciente) puede tener muchas citas
      */
     public function appointments()
     {
@@ -278,7 +274,6 @@ class Doctor extends Model
 
     /**
      * Relación inversa 1:1 con User
-     * Un doctor pertenece a un usuario
      */
     public function user()
     {
@@ -287,7 +282,6 @@ class Doctor extends Model
 
     /**
      * Relación 1:N con Appointment
-     * Un doctor puede tener muchas citas
      */
     public function appointments()
     {
@@ -296,7 +290,6 @@ class Doctor extends Model
 
     /**
      * Relación 1:N con Schedule
-     * Un doctor puede tener muchos horarios
      */
     public function schedules()
     {
@@ -309,14 +302,6 @@ class Doctor extends Model
     public function scopeActive($query)
     {
         return $query->whereNull('deleted_at');
-    }
-
-    /**
-     * Scope: Doctores por especialidad
-     */
-    public function scopeBySpecialty($query, $specialty)
-    {
-        return $query->where('specialty', $specialty);
     }
 }
 ```
@@ -378,22 +363,6 @@ class Appointment extends Model
     public function scopeConfirmed($query)
     {
         return $query->where('status', 'confirmed');
-    }
-
-    /**
-     * Verificar si la cita está pendiente
-     */
-    public function isPending(): bool
-    {
-        return $this->status === 'pending';
-    }
-
-    /**
-     * Verificar si la cita está confirmada
-     */
-    public function isConfirmed(): bool
-    {
-        return $this->status === 'confirmed';
     }
 }
 ```
@@ -726,30 +695,37 @@ Doctor::onlyTrashed()
     ->forceDelete();
 ```
 
-### Relaciones con Soft Deletes
+### Relaciones con Soft Deletes (Implementado en el Proyecto)
 
 ```php
-// Obtener citas de un doctor incluyendo si está eliminado
-$doctor = Doctor::withTrashed()->find(1);
-$appointments = $doctor->appointments;
-
-// Obtener solo citas de doctores activos (no eliminados)
-$appointments = Appointment::whereHas('doctor', function($query) {
-    $query->whereNull('deleted_at');
-})->get();
-
 // AdminDashboardController - Incluir doctores eliminados
 public function index()
 {
     // Incluir doctores con soft delete
     $doctors = Doctor::withTrashed()->with('user')->get();
     
-    // Solo horarios de doctores activos
-    $schedules = Schedule::whereHas('doctor', function($query) {
-        $query->whereNull('deleted_at');
-    })->with('doctor.user')->get();
+    // Obtener schedules y appointments normalmente
+    $schedules = Schedule::with('doctor.user')->get();
+    $appointments = Appointment::with('patient', 'doctor')
+        ->orderBy('appointment_date_time', 'desc')
+        ->get();
     
-    return view('dashboard.admin.index', compact('doctors', 'schedules'));
+    // Estadísticas
+    $totalDoctors = Doctor::count();
+    $totalPatients = User::where('role', 'patient')->count();
+    $totalAppointments = Appointment::count();
+    $pendingAppointments = Appointment::where('status', 'pending')->count();
+    
+    return view('dashboard.admin.index', compact(
+        'doctors',
+        'schedules',
+        'appointments',
+        'users',
+        'totalDoctors',
+        'totalPatients',
+        'totalAppointments',
+        'pendingAppointments'
+    ));
 }
 ```
 
@@ -838,8 +814,8 @@ Route::middleware(['auth', 'checkRole:doctor'])->group(function () {
     Route::get('/doctor/dashboard', [DoctorDashboardController::class, 'index'])
         ->name('doctor.dashboard');
     
-    Route::post('/doctor/citas/{id}/confirmar', [DoctorDashboardController::class, 'confirm'])
-        ->name('doctor.appointments.confirm');
+    Route::post('/doctor/citas/{appointment}/status', [DoctorDashboardController::class, 'updateAppointmentStatus'])
+        ->name('doctor.appointments.update-status');
 });
 
 // ==================== RUTAS DE ADMIN ====================
@@ -867,266 +843,254 @@ Route::middleware(['auth', 'checkRole:doctor,admin'])->group(function () {
 
 ---
 
-## Validaciones Personalizadas
+## Diagramas de Flujo
 
-### Form Request - StoreAppointmentRequest
-
-```php
-<?php
-
-namespace App\Http\Requests;
-
-use Illuminate\Foundation\Http\FormRequest;
-use App\Models\Appointment;
-use App\Models\Doctor;
-
-class StoreAppointmentRequest extends FormRequest
-{
-    /**
-     * Determinar si el usuario está autorizado para hacer esta petición
-     */
-    public function authorize(): bool
-    {
-        // Solo pacientes pueden crear citas
-        return $this->user() && $this->user()->role === 'patient';
-    }
-
-    /**
-     * Reglas de validación
-     */
-    public function rules(): array
-    {
-        return [
-            'doctor_id' => [
-                'required',
-                'exists:doctors,id',
-                // Validación personalizada: Doctor debe estar activo
-                function ($attribute, $value, $fail) {
-                    $doctor = Doctor::find($value);
-                    if (!$doctor || $doctor->trashed()) {
-                        $fail('El doctor seleccionado no está disponible.');
-                    }
-                },
-            ],
-            'appointment_date_time' => [
-                'required',
-                'date',
-                'after:now', // Fecha futura
-                // Validación personalizada: Verificar disponibilidad
-                function ($attribute, $value, $fail) {
-                    // Verificar que no haya otra cita en ese horario
-                    $exists = Appointment::where('doctor_id', $this->doctor_id)
-                        ->where('appointment_date_time', $value)
-                        ->whereIn('status', ['pending', 'confirmed'])
-                        ->exists();
-                    
-                    if ($exists) {
-                        $fail('Ya existe una cita en ese horario. Por favor, elija otro.');
-                    }
-                    
-                    // TODO: Verificar que la hora esté dentro del horario del doctor
-                    // $this->validateDoctorSchedule($value, $fail);
-                },
-            ],
-            'consultation_reason' => [
-                'required',
-                'string',
-                'max:500',
-                'min:10',
-            ],
-        ];
-    }
-
-    /**
-     * Mensajes de error personalizados
-     */
-    public function messages(): array
-    {
-        return [
-            'doctor_id.required' => 'Debe seleccionar un doctor.',
-            'doctor_id.exists' => 'El doctor seleccionado no existe.',
-            'appointment_date_time.required' => 'Debe especificar fecha y hora.',
-            'appointment_date_time.after' => 'La fecha debe ser futura.',
-            'consultation_reason.required' => 'Debe indicar el motivo de la consulta.',
-            'consultation_reason.min' => 'El motivo debe tener al menos 10 caracteres.',
-            'consultation_reason.max' => 'El motivo no puede exceder 500 caracteres.',
-        ];
-    }
-
-    /**
-     * Atributos personalizados para mensajes de error
-     */
-    public function attributes(): array
-    {
-        return [
-            'doctor_id' => 'doctor',
-            'appointment_date_time' => 'fecha de la cita',
-            'consultation_reason' => 'motivo de consulta',
-        ];
-    }
-
-    /**
-     * Validación personalizada: Verificar horario del doctor
-     */
-    protected function validateDoctorSchedule($dateTime, $fail)
-    {
-        $doctor = Doctor::find($this->doctor_id);
-        if (!$doctor) return;
-
-        $date = \Carbon\Carbon::parse($dateTime);
-        $dayOfWeek = $date->dayOfWeek; // 0 = Domingo, 6 = Sábado
-        $time = $date->format('H:i:s');
-
-        // Verificar si el doctor trabaja ese día
-        $schedule = $doctor->schedules()
-            ->where('day_of_week', $dayOfWeek)
-            ->where('is_active', true)
-            ->first();
-
-        if (!$schedule) {
-            $fail('El doctor no atiende ese día.');
-            return;
-        }
-
-        // Verificar si la hora está dentro del rango
-        if ($time < $schedule->start_time || $time > $schedule->end_time) {
-            $fail("El doctor solo atiende de {$schedule->start_time} a {$schedule->end_time}.");
-        }
-    }
-}
-```
-
-### Uso en Controller
-
-```php
-public function store(StoreAppointmentRequest $request)
-{
-    // Los datos ya están validados por el FormRequest
-    $validated = $request->validated();
-    
-    $appointment = Appointment::create([
-        'patient_id' => Auth::id(),
-        'doctor_id' => $validated['doctor_id'],
-        'appointment_date_time' => $validated['appointment_date_time'],
-        'consultation_reason' => $validated['consultation_reason'],
-        'status' => 'pending',
-    ]);
-    
-    return redirect()->route('appointments.index')
-        ->with('success', 'Cita creada exitosamente. Esperando confirmación del doctor.');
-}
-```
-
----
-
-## Flujos de Negocio
-
-### Flujo Completo: Crear y Gestionar una Cita
+### 🔄 Flujo 1: Paciente Reserva Cita Médica
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  PASO 1: Paciente Reserva Cita                          │
-└─────────────────────────────────────────────────────────┘
-
-Paciente:
-1. Login → /login
-2. Dashboard → /paciente/dashboard
-3. Click "Agendar Cita"
-4. Selecciona doctor por especialidad
-5. Elige fecha y hora
-6. Ingresa motivo de consulta
-7. Submit formulario
-
-Sistema:
-1. Valida datos (StoreAppointmentRequest)
-   - Doctor existe y está activo
-   - Fecha es futura
-   - No hay otra cita en ese horario
-   - Motivo es válido
-2. Crea Appointment con status='pending'
-3. Redirige a /citas con mensaje de éxito
-
-Estado:
-- Appointment.status = 'pending'
-- Visible para doctor en su dashboard
-
-┌─────────────────────────────────────────────────────────┐
-│  PASO 2: Doctor Revisa y Confirma Cita                  │
-└─────────────────────────────────────────────────────────┘
-
-Doctor:
-1. Login → /login
-2. Dashboard → /doctor/dashboard
-3. Ve sección "Citas Pendientes"
-4. Click en cita para ver detalles:
-   - Nombre del paciente
-   - Fecha y hora
-   - Motivo de consulta
-5. Decide: Confirmar o Rechazar
-6. Click "Confirmar Cita"
-
-Sistema:
-1. DoctorDashboardController::confirm($id)
-2. Valida que el doctor sea el asignado
-3. Actualiza Appointment.status = 'confirmed'
-4. (Opcional) Envía notificación al paciente
-5. Redirige con mensaje de éxito
-
-Estado:
-- Appointment.status = 'confirmed'
-- Visible en "Citas Confirmadas" del doctor
-- Visible en "Mis Citas" del paciente con badge verde
-
-┌─────────────────────────────────────────────────────────┐
-│  PASO 3: Día de la Cita - Doctor Atiende Paciente      │
-└─────────────────────────────────────────────────────────┘
-
-Doctor:
-1. Dashboard → /doctor/dashboard
-2. Ve "Citas Confirmadas" para hoy
-3. Atiende al paciente (fuera del sistema)
-4. Después de la consulta:
-   - Click "Marcar como Atendida"
-   - (Opcional) Agrega notas médicas
-   - Submit
-
-Sistema:
-1. DoctorDashboardController::markAttended($id)
-2. Actualiza:
-   - Appointment.status = 'attended'
-   - Appointment.notes = notas del doctor
-3. Redirige con mensaje de éxito
-
-Estado:
-- Appointment.status = 'attended'
-- Cita archivada en historial
-- Paciente puede ver notas médicas
-
-┌─────────────────────────────────────────────────────────┐
-│  ALTERNATIVA: Cancelación de Cita                       │
-└─────────────────────────────────────────────────────────┘
-
-Paciente o Doctor:
-1. Click "Cancelar Cita"
-2. Confirma acción
-
-Sistema:
-1. Actualiza Appointment.status = 'cancelled'
-2. (Opcional) Notifica a la otra parte
-3. Libera horario para nuevas citas
-
-Estado:
-- Appointment.status = 'cancelled'
-- Ya no aparece en secciones activas
-- Visible en historial
+┌──────────────────────────────────────────────────────────────────┐
+│                     INICIO: Paciente Logueado                    │
+└────────────────────────────────┬─────────────────────────────────┘
+                                 │
+                                 ▼
+                    ┌────────────────────────┐
+                    │  Ir a /patient/dashboard│
+                    └────────┬───────────────┘
+                             │
+                             ▼
+                    ┌────────────────────────┐
+                    │ Ver Listado de Doctores│
+                    │  - Especialidades      │
+                    │  - Biografías          │
+                    └────────┬───────────────┘
+                             │
+                             ▼
+                    ┌────────────────────────┐
+                    │ Seleccionar Doctor     │
+                    └────────┬───────────────┘
+                             │
+                             ▼
+                    ┌────────────────────────┐
+                    │ Formulario de Reserva: │
+                    │  - Fecha y hora        │
+                    │  - Motivo de consulta  │
+                    └────────┬───────────────┘
+                             │
+                             ▼
+                    ┌────────────────────────┐
+                    │ Submit POST /citas     │
+                    └────────┬───────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────────┐
+              │ Validaciones en Servidor         │
+              │  ✓ Doctor existe y está activo   │
+              │  ✓ Fecha es futura               │
+              │  ✓ No hay cita duplicada         │
+              │  ✓ Horario disponible            │
+              └─────┬────────────────────┬───────┘
+                    │                    │
+            ✓ Válido│                    │✗ Inválido
+                    ▼                    ▼
+        ┌──────────────────┐    ┌──────────────────┐
+        │ Crear Appointment│    │ Mostrar Errores  │
+        │  status: pending │    │ Volver al Form   │
+        └────────┬─────────┘    └──────────────────┘
+                 │
+                 ▼
+        ┌──────────────────┐
+        │ Redirect con     │
+        │ success message  │
+        └────────┬─────────┘
+                 │
+                 ▼
+        ┌──────────────────┐
+        │ Ver en Dashboard │
+        │ "Cita Pendiente" │
+        └──────────────────┘
+                 │
+                 ▼
+        ┌──────────────────┐
+        │ FIN              │
+        └──────────────────┘
 ```
 
-### Estados de Cita - Máquina de Estados
+### 🩺 Flujo 2: Doctor Gestiona Citas
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                ESTADOS DE APPOINTMENT                    │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     INICIO: Doctor Logueado                      │
+└────────────────────────────────┬─────────────────────────────────┘
+                                 │
+                                 ▼
+                    ┌────────────────────────┐
+                    │ Ir a /doctor/dashboard │
+                    └────────┬───────────────┘
+                             │
+                             ▼
+                    ┌────────────────────────┐
+                    │ Ver Dashboard:         │
+                    │  • Citas Pendientes    │
+                    │  • Citas Confirmadas   │
+                    │  • Agenda Semanal      │
+                    │  • Agenda Diaria       │
+                    │  • Estadísticas        │
+                    └────────┬───────────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+              ▼                             ▼
+   ┌──────────────────┐        ┌──────────────────┐
+   │ Ver Cita         │        │ Ver Agenda       │
+   │ Pendiente        │        │ (Diaria/Semanal) │
+   └────────┬─────────┘        └──────────────────┘
+            │
+            ▼
+   ┌────────────────────────┐
+   │ Decidir Acción:        │
+   │  1. Confirmar          │
+   │  2. Rechazar           │
+   │  3. Ver Detalles       │
+   └──┬──────────┬──────────┘
+      │          │
+   [1]│       [2]│
+      ▼          ▼
+┌─────────┐  ┌─────────┐
+│Confirmar│  │Rechazar │
+│  Cita   │  │  Cita   │
+└────┬────┘  └────┬────┘
+     │            │
+     ▼            ▼
+┌────────────────────────┐
+│ POST /doctor/citas/    │
+│   {id}/status          │
+│                        │
+│ Body:                  │
+│  - status: confirmed   │
+│    o canceled          │
+│  - notes (opcional)    │
+└────────┬───────────────┘
+         │
+         ▼
+┌────────────────────────┐
+│ Validar Autorización:  │
+│  ✓ Doctor es dueño     │
+│  ✓ Status válido       │
+└─────┬──────────────────┘
+      │
+      ▼
+┌────────────────────────┐
+│ Actualizar Appointment │
+│  - status              │
+│  - notes               │
+└────────┬───────────────┘
+         │
+         ▼
+┌────────────────────────┐
+│ Respuesta JSON Success │
+└────────┬───────────────┘
+         │
+         ▼
+┌────────────────────────┐
+│ Actualizar Vista       │
+│ (sin recargar página)  │
+└────────┬───────────────┘
+         │
+         ▼
+┌────────────────────────┐
+│ FIN                    │
+└────────────────────────┘
+```
+
+### 🔧 Flujo 3: Admin Gestiona Doctores (Con Soft Delete)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                     INICIO: Admin Logueado                       │
+└────────────────────────────────┬─────────────────────────────────┘
+                                 │
+                                 ▼
+                    ┌────────────────────────┐
+                    │ Ir a /admin/dashboard  │
+                    └────────┬───────────────┘
+                             │
+                             ▼
+                    ┌────────────────────────┐
+                    │ Ver Lista de Doctores: │
+                    │  • Activos (activo)    │
+                    │  • Inactivos (deleted) │
+                    └────────┬───────────────┘
+                             │
+              ┌──────────────┴──────────────────────┐
+              │                                     │
+              ▼                                     ▼
+   ┌──────────────────┐              ┌──────────────────┐
+   │ Doctor ACTIVO    │              │ Doctor INACTIVO  │
+   │ (deleted_at=NULL)│              │ (deleted_at!=NULL│
+   └────────┬─────────┘              └────────┬─────────┘
+            │                                 │
+            │ Click "Desactivar"              │ Click "Activar"
+            │                                 │
+            ▼                                 ▼
+┌──────────────────────┐         ┌──────────────────────┐
+│ PATCH /admin/doctors/│         │ PATCH /admin/doctors/│
+│    {id}/toggle       │         │    {id}/toggle       │
+└──────────┬───────────┘         └──────────┬───────────┘
+           │                                │
+           ▼                                ▼
+┌──────────────────────┐         ┌──────────────────────┐
+│ Controller:          │         │ Controller:          │
+│ $doctor->delete()    │         │ $doctor->restore()   │
+│ (Soft Delete)        │         │                      │
+└──────────┬───────────┘         └──────────┬───────────┘
+           │                                │
+           ▼                                ▼
+┌──────────────────────────────────────────────────────┐
+│              Laravel dispara Observer                │
+└──────────┬───────────────────────────────┬───────────┘
+           │                               │
+           ▼                               ▼
+┌──────────────────────┐       ┌──────────────────────┐
+│ DoctorObserver::     │       │ DoctorObserver::     │
+│   deleting()         │       │   restoring()        │
+│                      │       │                      │
+│ • user.role=patient  │       │ • user.role=doctor   │
+│ • user.active=false  │       │ • user.active=true   │
+└──────────┬───────────┘       └──────────┬───────────┘
+           │                               │
+           ▼                               ▼
+┌──────────────────────┐       ┌──────────────────────┐
+│ doctor.deleted_at    │       │ doctor.deleted_at    │
+│   = now()            │       │   = NULL             │
+└──────────┬───────────┘       └──────────┬───────────┘
+           │                               │
+           └───────────────┬───────────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │ Redirect con Success │
+                └──────────┬───────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │ Vista Actualizada:   │
+                │  • Badge correcto    │
+                │  • User role/active  │
+                │    sincronizado      │
+                └──────────┬───────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │ FIN                  │
+                └──────────────────────┘
+```
+
+### 📊 Flujo 4: Estados de Cita (Máquina de Estados)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    ESTADOS DE APPOINTMENT                        │
+└──────────────────────────────────────────────────────────────────┘
 
           ┌──────────────┐
           │   pending    │ ← Cita creada por paciente
@@ -1163,7 +1127,7 @@ cancelled → cualquier otro estado (ya fue cancelada)
 
 ## Gestión de Estados
 
-### Implementación en Controller
+### Implementación Real en DoctorDashboardController
 
 ```php
 <?php
@@ -1177,271 +1141,189 @@ use Illuminate\Support\Facades\Auth;
 class DoctorDashboardController extends Controller
 {
     /**
-     * Confirmar cita pendiente
+     * Actualiza el estado de una cita médica
+     * Solo permite al doctor dueño de la cita modificarla
      */
-    public function confirmAppointment(Request $request, $appointmentId)
+    public function updateAppointmentStatus(Request $request, Appointment $appointment)
     {
-        $appointment = Appointment::findOrFail($appointmentId);
+        // Validar que el doctor autenticado sea el dueño de esta cita
+        $doctor = Auth::user()->doctor;
         
-        // Verificar que el doctor sea el asignado
-        if ($appointment->doctor->user_id !== Auth::id()) {
-            abort(403, 'No autorizado');
+        if ($appointment->doctor_id !== $doctor->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para modificar esta cita.'
+            ], 403);
         }
-        
-        // Verificar que esté pendiente
-        if ($appointment->status !== 'pending') {
-            return back()->with('error', 'La cita ya no está pendiente.');
-        }
-        
-        // Cambiar estado
-        $appointment->update(['status' => 'confirmed']);
-        
-        // TODO: Enviar notificación al paciente
-        
-        return back()->with('success', 'Cita confirmada exitosamente.');
-    }
-    
-    /**
-     * Marcar cita como atendida
-     */
-    public function markAttended(Request $request, $appointmentId)
-    {
-        $request->validate([
-            'notes' => 'nullable|string|max:1000',
+
+        // Validar los datos recibidos
+        $validated = $request->validate([
+            'status' => 'required|in:pending,confirmed,attended,canceled',
+            'notes' => 'nullable|string|max:1000'
         ]);
+
+        // Actualizar el estado de la cita
+        $appointment->status = $validated['status'];
         
-        $appointment = Appointment::findOrFail($appointmentId);
-        
-        // Verificar que el doctor sea el asignado
-        if ($appointment->doctor->user_id !== Auth::id()) {
-            abort(403, 'No autorizado');
+        // Si hay notas, agregarlas
+        if (!empty($validated['notes'])) {
+            $appointment->notes = $validated['notes'];
         }
         
-        // Verificar que esté confirmada
-        if ($appointment->status !== 'confirmed') {
-            return back()->with('error', 'Solo se pueden marcar como atendidas las citas confirmadas.');
-        }
-        
-        // Cambiar estado y agregar notas
-        $appointment->update([
-            'status' => 'attended',
-            'notes' => $request->notes,
+        $appointment->save();
+
+        // Retornar respuesta JSON exitosa
+        return response()->json([
+            'success' => true,
+            'message' => 'Estado de la cita actualizado correctamente.',
+            'appointment' => $appointment
         ]);
-        
-        return back()->with('success', 'Cita marcada como atendida.');
-    }
-    
-    /**
-     * Cancelar cita
-     */
-    public function cancelAppointment($appointmentId)
-    {
-        $appointment = Appointment::findOrFail($appointmentId);
-        
-        // Verificar autorización (doctor asignado o admin)
-        if ($appointment->doctor->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
-            abort(403, 'No autorizado');
-        }
-        
-        // Verificar que NO esté atendida
-        if ($appointment->status === 'attended') {
-            return back()->with('error', 'No se puede cancelar una cita ya atendida.');
-        }
-        
-        // Cambiar estado
-        $appointment->update(['status' => 'cancelled']);
-        
-        return back()->with('success', 'Cita cancelada.');
     }
 }
 ```
 
 ---
 
-## Optimizaciones y Performance
+## Implementación Real del Proyecto
 
-### Eager Loading (Carga Anticipada)
+### Características Implementadas
+
+#### ✅ Autenticación y Autorización
+- Sistema de login/registro con Laravel Breeze
+- Middleware `CheckRole` para control de acceso
+- Tres roles: patient, doctor, admin
+- Protección CSRF en todos los formularios
+
+#### ✅ Dashboard de Doctor
+El `DoctorDashboardController` implementa:
+
+1. **Estadísticas Generales**
+   ```php
+   $totalAppointments = $doctor->appointments()->count();
+   $pendingAppointments = $doctor->appointments()->where('status', 'pending')->count();
+   $confirmedAppointments = $doctor->appointments()->where('status', 'confirmed')->count();
+   $attendedAppointments = $doctor->appointments()->where('status', 'attended')->count();
+   ```
+
+2. **Agenda Diaria** (RF-13)
+   - Slots de 1 hora desde 8am a 5pm
+   - Estado: `booked` o `available`
+   - Información del paciente si hay cita
+   ```php
+   private function generateDailySchedule($doctorId, $date)
+   {
+       // Genera slots horarios con información de citas
+   }
+   ```
+
+3. **Agenda Semanal** (RF-13)
+   - Vista de 7 días (Lunes a Domingo)
+   - Días laborales vs no laborales
+   - Contador de citas por día
+   - Horas disponibles calculadas
+   ```php
+   private function generateWeeklySchedule($doctorId, $startOfWeek, $endOfWeek)
+   {
+       // Genera agenda de la semana con estadísticas
+   }
+   ```
+
+4. **Gestión de Citas**
+   - Actualizar estado de citas (AJAX)
+   - Agregar notas médicas
+   - Validación de autorización (solo doctor dueño)
+
+#### ✅ Dashboard de Admin
+El `AdminDashboardController` implementa:
 
 ```php
-// ❌ PROBLEMA: N+1 Query
-$doctors = Doctor::all();
-foreach ($doctors as $doctor) {
-    echo $doctor->user->name; // 1 query por cada doctor
-}
-// Total: 1 query inicial + N queries (uno por doctor) = N+1
-
-// ✅ SOLUCIÓN: Eager Loading
-$doctors = Doctor::with('user')->get();
-foreach ($doctors as $doctor) {
-    echo $doctor->user->name; // Sin queries adicionales
-}
-// Total: 2 queries (1 para doctors, 1 para users)
-
-// ✅ Eager Loading múltiple
-$appointments = Appointment::with(['patient', 'doctor.user'])->get();
-// Total: 3 queries (appointments, users, doctors)
-
-// ✅ Eager Loading condicional
-$doctors = Doctor::with(['schedules' => function($query) {
-    $query->where('is_active', true);
-}])->get();
-```
-
-### Paginación
-
-```php
-// ❌ Cargar todos los registros (lento con muchos datos)
-$appointments = Appointment::all();
-
-// ✅ Paginación
-$appointments = Appointment::paginate(20); // 20 por página
-
-// En la vista Blade
-{{ $appointments->links() }} // Links de paginación
-
-// Paginación simple (solo siguiente/anterior)
-$appointments = Appointment::simplePaginate(20);
-```
-
-### Caché
-
-```php
-use Illuminate\Support\Facades\Cache;
-
-// Cachear doctores activos por 1 hora
-$doctors = Cache::remember('doctors.active', 3600, function () {
-    return Doctor::active()->with('user')->get();
-});
-
-// Invalidar caché cuando se actualiza
-public function store(Request $request)
+public function index()
 {
-    $doctor = Doctor::create($request->validated());
+    // Doctores incluyendo eliminados (soft deleted)
+    $doctors = Doctor::withTrashed()->with('user')->get();
     
-    // Limpiar caché
-    Cache::forget('doctors.active');
+    // Schedules y appointments
+    $schedules = Schedule::with('doctor.user')->get();
+    $appointments = Appointment::with('patient', 'doctor')
+        ->orderBy('appointment_date_time', 'desc')
+        ->get();
     
-    return redirect()->back();
+    // Todos los usuarios
+    $users = User::all();
+    
+    // Estadísticas
+    $totalDoctors = Doctor::count();
+    $totalPatients = User::where('role', 'patient')->count();
+    $totalAppointments = Appointment::count();
+    $pendingAppointments = Appointment::where('status', 'pending')->count();
+    
+    return view('dashboard.admin.index', compact(
+        'doctors', 'schedules', 'appointments', 'users',
+        'totalDoctors', 'totalPatients', 'totalAppointments', 'pendingAppointments'
+    ));
 }
 ```
 
-### Índices en Base de Datos
+#### ✅ Observers
+- `DoctorObserver` registrado en `AppServiceProvider`
+- Sincronización automática usuario-doctor
+- Logging de cambios críticos
 
-```php
-// Migración con índices
-Schema::create('appointments', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('patient_id')->constrained()->onDelete('cascade');
-    $table->foreignId('doctor_id')->constrained()->onDelete('cascade');
-    $table->dateTime('appointment_date_time');
-    $table->enum('status', ['pending', 'confirmed', 'attended', 'cancelled']);
-    $table->timestamps();
-    
-    // Índices para mejorar performance
-    $table->index('patient_id');
-    $table->index('doctor_id');
-    $table->index('appointment_date_time');
-    $table->index('status');
-    $table->unique(['doctor_id', 'appointment_date_time']); // Prevenir duplicados
-});
-```
+#### ✅ Soft Deletes
+- Implementado en modelos `User` y `Doctor`
+- Queries con `withTrashed()` en AdminDashboard
+- Toggle activar/desactivar sin pérdida de datos
 
----
+### Características NO Implementadas (Roadmap Futuro)
 
-## Seguridad Avanzada
+#### ❌ Sistema de Notificaciones
+- Emails de confirmación
+- Recordatorios automáticos
+- Notificaciones push
 
-### Rate Limiting
+#### ❌ Caché
+- Redis para optimización
+- Caché de consultas frecuentes
 
-```php
-// routes/web.php
-use Illuminate\Support\Facades\RateLimiter;
+#### ❌ Rate Limiting
+- Límite de peticiones por IP
+- Protección contra ataques
 
-RateLimiter::for('api', function (Request $request) {
-    return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
-});
+#### ❌ API RESTful
+- Endpoints públicos
+- Autenticación con Sanctum
+- Documentación con Swagger
 
-// Aplicar en rutas
-Route::middleware('throttle:60,1')->group(function () {
-    // Máximo 60 peticiones por minuto
-});
-```
-
-### Logging de Acciones Críticas
-
-```php
-use Illuminate\Support\Facades\Log;
-
-public function toggleStatus($userId)
-{
-    $user = User::findOrFail($userId);
-    $previousState = $user->active;
-    
-    $user->active = !$user->active;
-    $user->save();
-    
-    // Log de auditoría
-    Log::channel('audit')->info('Usuario modificado', [
-        'admin_id' => Auth::id(),
-        'admin_email' => Auth::user()->email,
-        'user_id' => $user->id,
-        'user_email' => $user->email,
-        'action' => $user->active ? 'activated' : 'deactivated',
-        'previous_state' => $previousState,
-        'new_state' => $user->active,
-        'timestamp' => now(),
-        'ip' => request()->ip(),
-    ]);
-    
-    return back()->with('success', 'Usuario actualizado');
-}
-```
-
-### Sanitización de Inputs
-
-```php
-use Illuminate\Support\Str;
-
-$request->validate([
-    'bio' => 'required|string',
-]);
-
-// Sanitizar HTML peligroso
-$safeBio = strip_tags($request->bio, '<p><br><b><i><u>');
-
-// O usar librerías especializadas
-$safeBio = clean($request->bio); // Laravel HTML Purifier
-
-$doctor->update([
-    'biography' => $safeBio,
-]);
-```
+#### ❌ Tests Automatizados
+- Feature tests
+- Unit tests
+- Coverage reports
 
 ---
 
 ## Conclusión
 
-Esta documentación técnica cubre los aspectos avanzados de **MediConnect**:
+Esta documentación técnica cubre los aspectos **reales e implementados** de **MediConnect**:
 
 - ✅ **Arquitectura MVC**: Separación clara de capas
-- ✅ **Eloquent Avanzado**: Relaciones, scopes, eager loading
-- ✅ **Observers**: Automatización de lógica de negocio
-- ✅ **Soft Deletes**: Recuperación de datos eliminados
-- ✅ **Autorización**: Control de acceso basado en roles
-- ✅ **Validaciones**: Form Requests con lógica personalizada
-- ✅ **Performance**: Optimizaciones y buenas prácticas
-- ✅ **Seguridad**: Rate limiting, logging, sanitización
+- ✅ **Eloquent**: Relaciones 1:1 y 1:N implementadas
+- ✅ **Observers**: DoctorObserver con sincronización automática
+- ✅ **Soft Deletes**: Implementado en User y Doctor
+- ✅ **Middleware CheckRole**: Control de acceso RBAC
+- ✅ **Diagramas de Flujo**: Actualizados y detallados
+- ✅ **Código Real**: Basado en la implementación actual
 
-### Próximos Pasos
+### Próximos Pasos Recomendados
 
-1. Implementar sistema de notificaciones (email/SMS)
+1. Implementar sistema de notificaciones por email
 2. Agregar tests automatizados (Feature y Unit)
-3. Crear API RESTful con Laravel Sanctum
-4. Implementar chat en tiempo real con Laravel Echo
-5. Dashboard con gráficos interactivos
-6. Exportación de reportes en PDF
+3. Optimizar consultas con eager loading consistente
+4. Crear API RESTful con Laravel Sanctum
+5. Implementar sistema de caché con Redis
+6. Agregar rate limiting para seguridad
 
 ---
 
 **Autor**: Guillén Cristófer  
 **Última actualización**: Diciembre 18, 2025  
-**Versión**: 1.2.0
+**Versión**: 1.2.1 (Documentación corregida)
