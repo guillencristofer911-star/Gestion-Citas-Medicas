@@ -8,25 +8,18 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 
-
 class DoctorController extends Controller
 {
-
-
-
-
     public function index()
     {
         $doctors = Doctor::with('user')->paginate(20);
         return view('admin.doctors.index', compact('doctors'));
     }
 
-
     public function create()
     {
         return view('admin.doctors.create');
     }
-
 
     public function store(Request $request)
     {
@@ -37,32 +30,30 @@ class DoctorController extends Controller
             'specialty' => 'required|string|max:255',
         ]);
 
-        $user = User::create ([
-            'name'=>$validated['name'],
-            'email'=>$validated['email'],
-            'password'=> Hash::make($validated['password']),
-            'role'=>'doctor',
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'doctor',
         ]);
 
         $doctor = Doctor::create([
-            'user_id'=>$user->id,
-            'specialty'=>$validated['specialty'],
-            'phone'=> $validated['phone'],
-            'license_number'=> $validated['license_number'],
-            'active'=> true,
+            'user_id' => $user->id,
+            'specialty' => $validated['specialty'],
+            'phone' => $validated['phone'] ?? null,
+            'license_number' => $validated['license_number'] ?? null,
+            'active' => true,
         ]);
 
         return redirect()->route('admin.doctors.index')
             ->with('success', 'Doctor creado exitosamente.');
     }
 
-
     public function edit(string $id)
     {
-        return view('admin.doctors.edit', compact ('doctor'));
-        
+        $doctor = Doctor::findOrFail($id);
+        return view('admin.doctors.edit', compact('doctor'));
     }
-
 
     public function update(Request $request, Doctor $doctor)
     {
@@ -77,7 +68,7 @@ class DoctorController extends Controller
                 ]);
             }
 
-            // Validación normal para edición completa (Hacer request completo)
+            // Validación normal para edición completa
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'specialty' => 'required|string|max:255',
@@ -111,7 +102,31 @@ class DoctorController extends Controller
             ->with('success', 'Doctor desactivado exitosamente.');
     }
 
+    //Alternar el estado activo/inactivo de un doctor
 
-
-    
+    public function toggleStatus($doctorId)
+    {
+        try {
+            $doctor = Doctor::withTrashed()->findOrFail($doctorId);
+            
+            if ($doctor->trashed()) {
+                $doctor->restore();
+                $message = 'Doctor activado exitosamente';
+            } else {
+                $doctor->delete();
+                $message = 'Doctor desactivado exitosamente';
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -246,7 +246,7 @@
                             @forelse($appointments as $appointment)
                                 <tr>
                                     <td>{{ $appointment->patient->name }}</td>
-                                    <td>{{ $appointment->doctor->user->name }}</td>
+                                    <td>{{ $doctor->user ? $doctor->user->name : 'Usuario no disponible' }}</td>
                                     <td>{{ $appointment->appointment_date_time->format('d/m/Y') }}</td>
                                     <td>{{ $appointment->appointment_date_time->format('H:i') }}</td>
                                     <td>
