@@ -1,1136 +1,1447 @@
-# Documentación Técnica – Sistema de Gestión de Citas Médicas
+# 📘 Documentación Técnica - MediConnect
 
-## 1. Descripción General
+## Índice
 
-Sistema web desarrollado con **Laravel 12** para la gestión integral de citas médicas, que permite la interacción entre tres tipos de usuarios: **pacientes**, **doctores** y **administradores**. El sistema facilita el registro de usuarios, la gestión de médicos, la configuración de horarios de atención y la programación de citas médicas.
-
-### Características Principales
-- Sistema multi-rol (Admin, Doctor, Paciente)
-- Gestión completa de citas médicas
-- Configuración flexible de horarios de atención
-- Panel de control específico para cada rol
-- Interfaz AJAX para operaciones CRUD
-- Autenticación y autorización robusta
-
-### Tecnologías Utilizadas
-- **Framework:** Laravel 12.x
-- **PHP:** ^8.2
-- **Base de datos:** MySQL / MariaDB
-- **Frontend:** Blade Templates, JavaScript, CSS
-- **Autenticación:** Laravel Auth
-- **Patrón arquitectónico:** MVC (Model-View-Controller)
+1. [Arquitectura del Sistema](#arquitectura-del-sistema)
+2. [Modelos y Relaciones](#modelos-y-relaciones)
+3. [Observers y Eventos](#observers-y-eventos)
+4. [Soft Deletes](#soft-deletes)
+5. [Middleware y Autorización](#middleware-y-autorización)
+6. [Validaciones Personalizadas](#validaciones-personalizadas)
+7. [Flujos de Negocio](#flujos-de-negocio)
+8. [Gestión de Estados](#gestión-de-estados)
+9. [Optimizaciones y Performance](#optimizaciones-y-performance)
+10. [Seguridad Avanzada](#seguridad-avanzada)
 
 ---
 
-## 2. Arquitectura del Sistema
+## Arquitectura del Sistema
 
-### 2.1. Estructura de Directorios
+### Patrón MVC (Model-View-Controller)
+
+MediConnect implementa el patrón MVC de Laravel con separación clara de responsabilidades:
 
 ```
-Citas-Medicas/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Admin/
-│   │   │   │   ├── AdminDashboardController.php
-│   │   │   │   ├── AppointmentController.php
-│   │   │   │   ├── DoctorController.php
-│   │   │   │   ├── ScheduleController.php
-│   │   │   │   └── UserController.php
-│   │   │   ├── Auth/
-│   │   │   │   ├── LoginController.php
-│   │   │   │   └── RegisterController.php
-│   │   │   ├── AppointmentController.php
-│   │   │   ├── DashboardController.php
-│   │   │   ├── DoctorDashboardController.php
-│   │   │   └── PatientDashboardController.php
-│   │   └── Middleware/
-│   │       └── CheckRole.php (middleware personalizado)
-│   └── Models/
-│       ├── User.php
-│       ├── Doctor.php
-│       ├── Appointment.php
-│       └── Schedule.php
-├── config/
-├── database/
-│   ├── migrations/
-│   │   ├── 0001_01_01_000000_create_users_table.php
-│   │   ├── 2025_12_11_141027_create_doctors_table.php
-│   │   ├── 2025_12_11_141051_create_appointments_table.php
-│   │   ├── 2025_12_13_143647_update_appointments_status_enum.php
-│   │   └── 2025_12_14_163415_create_schedules_table.php
-│   └── seeders/
-├── public/
-│   └── index.php (punto de entrada)
-├── resources/
-│   └── views/
-│       ├── admin/
-│       ├── doctor/
-│       ├── patient/
-│       └── auth/
-├── routes/
-│   ├── web.php
-│   └── api.php
-└── storage/
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENTE (Browser)                     │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│                      ROUTING (web.php)                   │
+│  • Definición de URLs                                   │
+│  • Aplicación de Middleware                             │
+│  • Mapeo a Controladores                                │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│                   MIDDLEWARE LAYER                       │
+│  • Authenticate: Verificar login                        │
+│  • CheckRole: Validar permisos por rol                  │
+│  • CSRF: Protección contra ataques CSRF                 │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│                     CONTROLLERS                          │
+│  • PatientDashboardController                           │
+│  • DoctorDashboardController                            │
+│  • AdminDashboardController                             │
+│  • Admin/DoctorController                               │
+│  • Admin/UserController                                 │
+│  • AppointmentController                                │
+└────┬────────────────────────┬───────────────────────────┘
+     │                        │
+     ▼                        ▼
+┌─────────────┐        ┌──────────────┐
+│   MODELS    │◄──────►│  OBSERVERS   │
+│  • User     │        │  • Doctor    │
+│  • Doctor   │        │  • User      │
+│  • Appoint  │        │              │
+│  • Schedule │        └──────────────┘
+└─────┬───────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────────┐
+│                    DATABASE (MySQL)                      │
+│  • users                                                │
+│  • doctors                                              │
+│  • appointments                                         │
+│  • schedules                                            │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### 2.2. Patrón MVC
+### Capas de la Aplicación
 
-El sistema sigue estrictamente el patrón **MVC** de Laravel:
+#### 1. **Presentation Layer** (Vistas)
+- **Ubicación**: `resources/views/`
+- **Tecnología**: Blade Templates
+- **Responsabilidad**: Renderizar HTML y mostrar datos al usuario
 
-- **Modelos (M):** Representan la lógica de negocio y acceso a datos
-- **Vistas (V):** Templates Blade para la presentación
-- **Controladores (C):** Gestionan las peticiones HTTP y coordinan modelos y vistas
+```blade
+{{-- Ejemplo: resources/views/dashboard/admin/index.blade.php --}}
+<div class="stats">
+    <h3>Total Doctores: {{ $totalDoctors }}</h3>
+    <h3>Citas Pendientes: {{ $pendingAppointments }}</h3>
+</div>
+```
 
----
+#### 2. **Business Logic Layer** (Controladores)
+- **Ubicación**: `app/Http/Controllers/`
+- **Responsabilidad**: Procesar peticiones, coordinar modelos, devolver vistas
 
-## 3. Modelos de Datos
-
-### 3.1. User (Usuario)
-
-**Responsabilidad:** Gestiona la autenticación y datos básicos de todos los usuarios del sistema.
-
-**Campos principales:**
 ```php
-- id: bigint (PK)
-- name: string
-- email: string (único)
-- password: string (encriptado)
-- role: enum('admin', 'doctor', 'patient')
-- active: boolean
-- email_verified_at: timestamp (nullable)
-- remember_token: string (nullable)
-- created_at: timestamp
-- updated_at: timestamp
+// app/Http/Controllers/Admin/AdminDashboardController.php
+public function index()
+{
+    $doctors = Doctor::withTrashed()->with('user')->get();
+    $users = User::all();
+    
+    return view('dashboard.admin.index', compact('doctors', 'users'));
+}
 ```
 
-**Relaciones:**
+#### 3. **Data Access Layer** (Modelos)
+- **Ubicación**: `app/Models/`
+- **Responsabilidad**: Interacción con base de datos, relaciones, lógica de datos
+
 ```php
-// Relación uno a uno con Doctor (si role = 'doctor')
-public function doctor(): HasOne
-    return $this->hasOne(Doctor::class, 'user_id');
-
-// Relación uno a muchos con Appointments (como paciente)
-public function appointments(): HasMany
-    return $this->hasMany(Appointment::class, 'patient_id');
-```
-
-**Atributos protegidos:**
-- `$fillable`: ['name', 'email', 'password', 'role', 'active']
-- `$hidden`: ['password', 'remember_token']
-- `$casts`: ['email_verified_at' => 'datetime', 'active' => 'boolean']
-
----
-
-### 3.2. Doctor
-
-**Responsabilidad:** Almacena información específica de los doctores registrados en el sistema.
-
-**Campos principales:**
-```php
-- id: bigint (PK)
-- user_id: bigint (FK → users.id)
-- license_number: string (número de licencia médica)
-- specialty: string
-- biography: text (nullable)
-- photo_url: string (nullable)
-- active: boolean
-- created_at: timestamp
-- updated_at: timestamp
-```
-
-**Relaciones:**
-```php
-// Relación con User (inversa de uno a uno)
-public function user(): BelongsTo
-    return $this->belongsTo(User::class, 'user_id');
-
-// Relación uno a muchos con Appointments
-public function appointments(): HasMany
-    return $this->hasMany(Appointment::class, 'doctor_id');
-
-// Relación uno a muchos con Schedules
-public function schedules(): HasMany
-    return $this->hasMany(Schedule::class);
-```
-
-**Atributos protegidos:**
-- `$fillable`: ['user_id', 'license_number', 'specialty', 'biography', 'photo_url', 'active']
-- `$casts`: ['active' => 'boolean']
-
----
-
-### 3.3. Schedule (Horario)
-
-**Responsabilidad:** Define los bloques de horarios disponibles de cada doctor para agendar citas.
-
-**Campos principales:**
-```php
-- id: bigint (PK)
-- doctor_id: bigint (FK → doctors.id)
-- day_of_week: enum('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
-- start_time: time
-- end_time: time
-- interval_minutes: integer (duración de cada cita en minutos)
-- is_active: boolean
-- created_at: timestamp
-- updated_at: timestamp
-```
-
-**Relaciones:**
-```php
-// Relación con Doctor
-public function doctor(): BelongsTo
-    return $this->belongsTo(Doctor::class);
-```
-
-**Atributos protegidos:**
-- `$fillable`: ['doctor_id', 'day_of_week', 'start_time', 'end_time', 'interval_minutes', 'is_active']
-- `$casts`: ['is_active' => 'boolean']
-
-**Lógica de negocio:**
-- Permite configurar disponibilidad por día de la semana
-- Define intervalos de tiempo entre citas
-- Puede activarse/desactivarse sin eliminarse
-
----
-
-### 3.4. Appointment (Cita)
-
-**Responsabilidad:** Registra las citas médicas programadas entre pacientes y doctores.
-
-**Campos principales:**
-```php
-- id: bigint (PK)
-- patient_id: bigint (FK → users.id)
-- doctor_id: bigint (FK → doctors.id)
-- appointment_date_time: datetime
-- status: enum('pending', 'confirmed', 'cancelled', 'completed')
-- consultation_reason: text
-- notes: text (nullable)
-- created_at: timestamp
-- updated_at: timestamp
-```
-
-**Relaciones:**
-```php
-// Relación con User (paciente)
-public function patient(): BelongsTo
-    return $this->belongsTo(User::class, 'patient_id');
-
-// Relación con Doctor
-public function doctor(): BelongsTo
-    return $this->belongsTo(Doctor::class, 'doctor_id');
-```
-
-**Atributos protegidos:**
-- `$fillable`: ['patient_id', 'doctor_id', 'appointment_date_time', 'status', 'consultation_reason', 'notes']
-- `$casts`: ['appointment_date_time' => 'datetime']
-
-**Estados de cita:**
-- `pending`: Cita creada, pendiente de confirmación
-- `confirmed`: Cita confirmada por el doctor
-- `cancelled`: Cita cancelada (por paciente o doctor)
-- `completed`: Cita finalizada
-
----
-
-## 4. Diagrama de Relaciones (ERD)
-
-```
-┌─────────────┐           ┌─────────────┐
-│    Users    │           │   Doctors   │
-├─────────────┤           ├─────────────┤
-│ • id (PK)   │───────────│ • id (PK)   │
-│ • name      │   1:1     │ • user_id   │
-│ • email     │           │ • license   │
-│ • password  │           │ • specialty │
-│ • role      │           │ • active    │
-│ • active    │           └──────┬──────┘
-└──────┬──────┘                  │
-       │                         │
-       │ 1:N                     │ 1:N
-       │                         │
-       │                  ┌──────┴───────┐
-       │                  │  Schedules   │
-       │                  ├──────────────┤
-       │                  │ • id (PK)    │
-       │                  │ • doctor_id  │
-       │                  │ • day_of_week│
-       │                  │ • start_time │
-       │                  │ • end_time   │
-       │                  └──────────────┘
-       │
-       │
-┌──────┴──────────────┐
-│  Appointments   │
-├─────────────────┤
-│ • id (PK)       │
-│ • patient_id    │────┐
-│ • doctor_id     │────┘
-│ • date_time     │
-│ • status        │
-│ • reason        │
-└─────────────────┘
+// app/Models/Doctor.php
+class Doctor extends Model
+{
+    use SoftDeletes;
+    
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
 ```
 
 ---
 
-## 5. Diagramas de Flujo de Procesos
+## Modelos y Relaciones
 
-### 5.1. Flujo de Registro de Usuario
+### Diagrama de Relaciones Detallado
 
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Usuario accede a /register]
-    B --> C[Formulario de registro]
-    C --> D[Ingresa datos:<br/>- Nombre<br/>- Email<br/>- Contraseña<br/>- Rol]
-    D --> E[POST /register<br/>RegisterController]
-    E --> F{Validar datos:<br/>- Email único<br/>- Password ≥8<br/>- Campos requeridos}
-    F -->|NO| G[Mostrar errores]
-    G --> C
-    F -->|SI| H[Encriptar password<br/>bcrypt]
-    H --> I[Crear User en BD]
-    I --> J{"Rol es 'doctor'?"}
-    J -->|SI| K[Flag para admin:<br/>Debe crear doctor]
-    K --> L[Mensaje: Admin debe<br/>completar datos médicos]
-    J -->|NO| M[Redirigir a /login]
-    L --> M
-    M --> N([FIN])
+```
+┌──────────────────────────────────────────────────────────┐
+│                        User                              │
+│──────────────────────────────────────────────────────────│
+│ PK: id                                                   │
+│ name, email, password                                    │
+│ role: ENUM('patient', 'doctor', 'admin')                │
+│ active: BOOLEAN                                          │
+│ deleted_at: TIMESTAMP (Soft Delete)                      │
+└───┬──────────────────────────────────────────────────┬───┘
+    │                                                   │
+    │ 1:1 (hasOne)                                      │ 1:N (hasMany)
+    │                                                   │
+    ▼                                                   ▼
+┌───────────────────────────┐              ┌────────────────────┐
+│         Doctor            │              │   Appointment      │
+│───────────────────────────│              │────────────────────│
+│ PK: id                    │              │ PK: id             │
+│ FK: user_id (UNIQUE)      │              │ FK: patient_id     │
+│ license_number (UNIQUE)   │◄────┐        │ FK: doctor_id      │
+│ specialty                 │     │        │ appointment_date   │
+│ biography (TEXT)          │     │        │ status: ENUM       │
+│ active: BOOLEAN           │     │        │ notes (TEXT)       │
+│ deleted_at (Soft Delete)  │     │        └────────────────────┘
+└───┬───────────────────────┘     │
+    │                             │
+    │ 1:N (hasMany)               │ N:1 (belongsTo)
+    │                             │
+    ▼                             │
+┌───────────────────────────┐     │
+│        Schedule           │     │
+│───────────────────────────│     │
+│ PK: id                    │─────┘
+│ FK: doctor_id             │
+│ day_of_week: 0-6          │
+│ start_time: TIME          │
+│ end_time: TIME            │
+│ is_active: BOOLEAN        │
+└───────────────────────────┘
 ```
 
----
+### Implementación de Relaciones
 
-### 5.2. Flujo de Inicio de Sesión
-
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Usuario accede a /login]
-    B --> C[Formulario de login]
-    C --> D[Ingresa datos<br/>Email y Password]
-    D --> E[POST /login<br/>LoginController]
-    E --> F{Validar credenciales}
-    F -->|INVÁLIDO| G[Mensaje de error]
-    G --> C
-    F -->|VÁLIDO| H[Crear sesión]
-    H --> I{Usuario activo?}
-    I -->|NO| J[Error: Usuario inactivo]
-    J --> C
-    I -->|SI| K[Verificar rol del usuario]
-    K --> L{Tipo de rol}
-    L -->|ADMIN| M[Redirigir a<br/>/admin/dashboard]
-    L -->|DOCTOR| N[Redirigir a<br/>/doctor/dashboard]
-    L -->|PATIENT| O[Redirigir a<br/>/patient/dashboard]
-    M --> P([FIN])
-    N --> P
-    O --> P
-```
-
----
-
-### 5.3. Flujo de Creación de Doctor (Administrador)
-
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Admin en<br/>/admin/dashboard]
-    B --> C[Clic en<br/>Nuevo Doctor]
-    C --> D[Modal AJAX aparece]
-    D --> E[Formulario con:<br/>- Select User<br/>- License Number<br/>- Specialty<br/>- Biography opt<br/>- Photo opt]
-    E --> F[Admin completa<br/>formulario]
-    F --> G[POST /admin/<br/>doctors/store<br/>AJAX]
-    G --> H[DoctorController<br/>::store]
-    H --> I{Validar datos:<br/>- user_id exists<br/>- license unique<br/>- specialty required}
-    I -->|INVÁLIDO| J[Retornar errores<br/>JSON 422]
-    J --> E
-    I -->|VÁLIDO| K{Verificar que user<br/>no sea doctor ya}
-    K -->|YA ES DOCTOR| L[Error:<br/>Ya es doctor]
-    L --> J
-    K -->|NO ES DOCTOR| M[Crear Doctor en BD]
-    M --> N[Subir foto<br/>si existe]
-    N --> O[Retornar success<br/>JSON 200]
-    O --> P[JavaScript actualiza<br/>tabla sin recargar]
-    P --> Q[Cerrar modal<br/>Mostrar notificación]
-    Q --> R([FIN])
-```
-
----
-
-### 5.4. Flujo de Configuración de Horarios
-
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Admin selecciona<br/>doctor desde tabla]
-    B --> C[Clic Gestionar<br/>Horarios]
-    C --> D[Modal con lista de<br/>horarios existentes]
-    D --> E[Clic Agregar<br/>Horario]
-    E --> F[Formulario:<br/>- Day of Week<br/>- Start Time<br/>- End Time<br/>- Interval Minutes<br/>- Is Active]
-    F --> G[Admin completa datos]
-    G --> H[POST /admin/<br/>schedules/store]
-    H --> I[ScheduleController<br/>::store]
-    I --> J{Validar:<br/>- doctor_id exists<br/>- day_of_week enum<br/>- start < end<br/>- interval > 0}
-    J -->|INVÁLIDO| K[Retornar errores<br/>JSON 422]
-    K --> F
-    J -->|VÁLIDO| L{Verificar<br/>conflictos de horario}
-    L -->|CONFLICTO| M[Error:<br/>Horarios se superponen]
-    M --> K
-    L -->|SIN CONFLICTO| N[Crear Schedule en BD]
-    N --> O[Retornar success<br/>con datos creados]
-    O --> P[Actualizar lista<br/>de horarios AJAX]
-    P --> Q[Notificación de éxito]
-    Q --> R([FIN])
-```
-
----
-
-### 5.5. Flujo de Agendamiento de Cita (Paciente)
-
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Paciente en<br/>/patient/dashboard]
-    B --> C[Ve lista de<br/>doctores disponibles]
-    C --> D[Selecciona doctor]
-    D --> E[Sistema carga:<br/>- Horarios del doctor<br/>- Citas existentes<br/>- Genera slots disponibles]
-    E --> F[Algoritmo:<br/>FOR cada schedule<br/>IF day matches<br/>Genera slots cada interval<br/>EXCLUYE citas existentes]
-    F --> G[Muestra calendario<br/>con slots verdes<br/>disponibles]
-    G --> H[Paciente selecciona<br/>fecha y hora]
-    H --> I[Formulario de cita:<br/>- Fecha/Hora fija<br/>- Motivo consulta]
-    I --> J[POST /citas<br/>AppointmentController]
-    J --> K{Validar:<br/>- doctor_id valid<br/>- date > now<br/>- reason required}
-    K -->|INVÁLIDO| L[Retornar errores]
-    L --> I
-    K -->|VÁLIDO| M{Verificar<br/>disponibilidad}
-    M -->|OCUPADO| N[Error:<br/>Horario ocupado]
-    N --> L
-    M -->|DISPONIBLE| O[Crear Appointment<br/>status=pending]
-    O --> P[Generar ID único]
-    P --> Q[Guardar en BD]
-    Q --> R[Futuro:<br/>Enviar email a doctor]
-    R --> S[Redirigir a dashboard<br/>con mensaje éxito]
-    S --> T[Actualizar lista<br/>Mis Citas]
-    T --> U([FIN])
-```
-
----
-
-### 5.6. Flujo de Gestión de Cita (Doctor)
-
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Doctor en<br/>/doctor/dashboard]
-    B --> C[Sistema carga citas<br/>asignadas agrupadas<br/>por estado y fecha]
-    C --> D[Vista de citas:<br/>PENDIENTES badge rojo<br/>CONFIRMADAS badge azul<br/>COMPLETADAS badge verde]
-    D --> E[Doctor selecciona<br/>una cita]
-    E --> F[Modal detalle:<br/>- Paciente<br/>- Fecha/Hora<br/>- Motivo<br/>- Estado actual<br/>- Botones acción]
-    F --> G{Doctor elige acción}
-    G -->|CONFIRMAR| H1[POST update-status]
-    G -->|COMPLETAR| H2[POST update-status]
-    G -->|CANCELAR| H3[POST update-status]
-    H1 --> I
-    H2 --> I
-    H3 --> I[DoctorDashboardController<br/>::updateAppointmentStatus]
-    I --> J{Validar:<br/>Appointment pertenece<br/>al doctor autenticado}
-    J -->|INVÁLIDO| K[Error 403<br/>No autorizado]
-    K --> Z([FIN])
-    J -->|VÁLIDO| L{Verificar<br/>transición válida}
-    L -->|INVÁLIDA| M[Error:<br/>Transición inválida]
-    M --> K
-    L -->|VÁLIDA| N[Actualizar status<br/>en BD]
-    N --> O[Opcional:<br/>Agregar notas del doctor]
-    O --> P[Futuro:<br/>Notificar paciente]
-    P --> Q[Retornar respuesta<br/>JSON]
-    Q --> R[JavaScript actualiza<br/>tarjeta sin recargar]
-    R --> S[Cambio de badge color<br/>según estado]
-    S --> T[Notificación toast]
-    T --> Z
-```
-
----
-
-### 5.7. Flujo de Cancelación de Cita (Paciente)
-
-```mermaid
-flowchart TD
-    A([INICIO]) --> B[Paciente en<br/>/patient/dashboard]
-    B --> C[Ve Mis Citas:<br/>- Pendientes<br/>- Confirmadas]
-    C --> D[Selecciona cita<br/>que desea cancelar]
-    D --> E[Clic en botón<br/>Cancelar Cita]
-    E --> F{Modal de confirmación:<br/>¿Está seguro?}
-    F -->|NO| G[Cerrar modal]
-    G --> Z([FIN])
-    F -->|SI| H[POST /citas/<br/>appointment/cancel]
-    H --> I[AppointmentController<br/>::cancel]
-    I --> J{Validar:<br/>- Cita existe<br/>- patient_id == auth}
-    J -->|INVÁLIDO| K[Error 403:<br/>No puede cancelar<br/>esta cita]
-    K --> Z
-    J -->|VÁLIDO| L{Verificar que<br/>no esté completed}
-    L -->|NO CANCELABLE| M[Error:<br/>Cita ya completada]
-    M --> K
-    L -->|CANCELABLE| N[Actualizar<br/>status=cancelled]
-    N --> O[Registrar fecha<br/>de cancelación]
-    O --> P[Futuro:<br/>Notificar doctor<br/>por email]
-    P --> Q[Futuro:<br/>Liberar slot para<br/>otros pacientes]
-    Q --> R[Redirigir con mensaje:<br/>Cita cancelada]
-    R --> S[Actualizar lista<br/>de citas]
-    S --> T[Cita muestra badge gris<br/>Cancelada]
-    T --> Z
-```
-
----
-
-### 5.8. Flujo de Autorización por Middleware
-
-```mermaid
-flowchart TD
-    A([REQUEST HTTP]) --> B{Ruta tiene<br/>middleware?}
-    B -->|NO| C[Pasar a controlador]
-    C --> Z([RESPONSE])
-    B -->|SI| D[Ejecutar middleware]
-    D --> E[Middleware 'auth']
-    E --> F{Usuario<br/>autenticado?}
-    F -->|NO| G[Redirigir a /login]
-    G --> Z
-    F -->|SI| H[Middleware 'checkRole']
-    H --> I[Obtener rol requerido<br/>del parámetro]
-    I --> J[auth->user->role]
-    J --> K{Rol del usuario<br/>coincide con<br/>rol requerido?}
-    K -->|NO| L[Error 403<br/>Acceso Denegado]
-    L --> Z
-    K -->|SI| M[Permitir acceso<br/>a ruta]
-    M --> N[Controlador ejecuta<br/>acción]
-    N --> Z
-```
-
----
-
-## 6. Capa de Controladores
-
-### 6.1. Controladores de Autenticación
-
-#### LoginController
-**Ubicación:** `app/Http/Controllers/Auth/LoginController.php`
-
-**Responsabilidad:** Gestión del inicio de sesión de usuarios.
-
-**Métodos principales:**
-- `show()`: Muestra el formulario de login
-- `store()`: Procesa las credenciales y autentica al usuario
-- `logout()`: Cierra la sesión del usuario
-
-#### RegisterController
-**Ubicación:** `app/Http/Controllers/Auth/RegisterController.php`
-
-**Responsabilidad:** Gestión del registro de nuevos usuarios.
-
-**Métodos principales:**
-- `show()`: Muestra el formulario de registro
-- `store()`: Valida y crea un nuevo usuario en el sistema
-
----
-
-### 6.2. Controladores de Dashboard
-
-#### DashboardController
-**Ubicación:** `app/Http/Controllers/DashboardController.php`
-
-**Responsabilidad:** Redirección al dashboard correspondiente según el rol del usuario.
-
-**Métodos:**
-- `index()`: Redirige a `/admin/dashboard`, `/doctor/dashboard` o `/patient/dashboard` según el rol
-
-#### PatientDashboardController
-**Ubicación:** `app/Http/Controllers/PatientDashboardController.php`
-
-**Responsabilidad:** Panel de control para pacientes.
-
-**Funcionalidades:**
-- Mostrar citas programadas del paciente
-- Listar doctores disponibles
-- Permitir agendar nuevas citas
-
-#### DoctorDashboardController
-**Ubicación:** `app/Http/Controllers/DoctorDashboardController.php`
-
-**Responsabilidad:** Panel de control para doctores.
-
-**Funcionalidades:**
-- Mostrar citas asignadas al doctor
-- Actualizar estado de citas (confirmar, completar, cancelar)
-- Gestionar horarios de atención
-
-**Métodos clave:**
-```php
-index(): Vista del dashboard del doctor
-updateAppointmentStatus(): Actualiza el estado de una cita
-```
-
-#### AdminDashboardController
-**Ubicación:** `app/Http/Controllers/Admin/AdminDashboardController.php`
-
-**Responsabilidad:** Panel de control administrativo.
-
-**Funcionalidades:**
-- Vista general del sistema (estadísticas)
-- Acceso a gestión de usuarios, doctores, horarios y citas
-
----
-
-### 6.3. Controladores de Administración
-
-#### Admin\DoctorController
-**Ubicación:** `app/Http/Controllers/Admin/DoctorController.php`
-
-**Responsabilidad:** CRUD de doctores (solo para administradores).
-
-**Métodos:**
-```php
-store(): Crear un nuevo doctor
-update(): Actualizar información de un doctor
-destroy(): Eliminar un doctor del sistema
-```
-
-**Validaciones:**
-- Número de licencia único
-- Relación válida con usuario existente
-- Especialidad requerida
-
-#### Admin\ScheduleController
-**Ubicación:** `app/Http/Controllers/Admin/ScheduleController.php`
-
-**Responsabilidad:** CRUD de horarios de doctores.
-
-**Métodos:**
-```php
-store(): Crear nuevo bloque de horario
-update(): Modificar horario existente
-destroy(): Eliminar bloque de horario
-```
-
-**Validaciones:**
-- Validar que `start_time < end_time`
-- Verificar que no existan conflictos de horarios
-- `interval_minutes` debe ser positivo
-
-#### Admin\UserController
-**Ubicación:** `app/Http/Controllers/Admin/UserController.php`
-
-**Responsabilidad:** Gestión de usuarios del sistema.
-
-**Métodos:**
-```php
-update(): Actualizar datos de usuario (nombre, email, rol, estado)
-destroy(): Eliminar usuario
-```
-
-#### Admin\AppointmentController
-**Ubicación:** `app/Http/Controllers/Admin/AppointmentController.php`
-
-**Responsabilidad:** Vista general de todas las citas del sistema.
-
----
-
-### 6.4. AppointmentController
-
-**Ubicación:** `app/Http/Controllers/AppointmentController.php`
-
-**Responsabilidad:** Gestión de citas por parte de pacientes.
-
-**Métodos:**
-```php
-store(): Crear nueva cita médica
-cancel(): Cancelar una cita existente
-```
-
-**Validaciones al crear cita:**
-1. Verificar disponibilidad del doctor en la fecha/hora solicitada
-2. Validar que la fecha sea futura
-3. Verificar que el horario esté dentro de los bloques configurados
-4. Evitar citas duplicadas
-
----
-
-## 7. Sistema de Rutas
-
-### 7.1. Rutas Públicas
+#### User Model
 
 ```php
-GET  /                    → Vista de bienvenida (welcome)
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable, SoftDeletes;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'active',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'active' => 'boolean',
+    ];
+
+    /**
+     * Relación 1:1 con Doctor
+     * Un usuario puede ser un doctor (pero no todos los usuarios son doctores)
+     */
+    public function doctor()
+    {
+        return $this->hasOne(Doctor::class);
+    }
+
+    /**
+     * Relación 1:N con Appointments (como paciente)
+     * Un usuario (paciente) puede tener muchas citas
+     */
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, 'patient_id');
+    }
+
+    /**
+     * Verificar si el usuario es doctor
+     */
+    public function isDoctor(): bool
+    {
+        return $this->role === 'doctor';
+    }
+
+    /**
+     * Verificar si el usuario es admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Verificar si el usuario es paciente
+     */
+    public function isPatient(): bool
+    {
+        return $this->role === 'patient';
+    }
+}
 ```
 
-### 7.2. Rutas de Autenticación (Guest)
+#### Doctor Model
 
 ```php
-GET  /register           → Formulario de registro
-POST /register           → Procesar registro
-GET  /login              → Formulario de login
-POST /login              → Procesar login
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Doctor extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'user_id',
+        'license_number',
+        'specialty',
+        'biography',
+        'photo_url',
+        'active',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
+        'deleted_at' => 'datetime',
+    ];
+
+    /**
+     * Relación inversa 1:1 con User
+     * Un doctor pertenece a un usuario
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relación 1:N con Appointment
+     * Un doctor puede tener muchas citas
+     */
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, 'doctor_id');
+    }
+
+    /**
+     * Relación 1:N con Schedule
+     * Un doctor puede tener muchos horarios
+     */
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
+    /**
+     * Scope: Solo doctores activos
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereNull('deleted_at');
+    }
+
+    /**
+     * Scope: Doctores por especialidad
+     */
+    public function scopeBySpecialty($query, $specialty)
+    {
+        return $query->where('specialty', $specialty);
+    }
+}
 ```
 
-### 7.3. Rutas Autenticadas (Todas las Roles)
+#### Appointment Model
 
 ```php
-GET  /dashboard          → Dashboard general (redirige según rol)
-POST /logout             → Cerrar sesión
+<?php
 
-// Gestión de citas
-POST /citas              → Crear nueva cita
-POST /citas/{appointment}/cancel → Cancelar cita
-```
+namespace App\Models;
 
-### 7.4. Rutas de Paciente
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-**Middleware:** `auth`, `checkRole:patient`
+class Appointment extends Model
+{
+    use HasFactory;
 
-```php
-GET  /paciente/dashboard → Dashboard del paciente
-```
+    protected $fillable = [
+        'patient_id',
+        'doctor_id',
+        'appointment_date_time',
+        'status',
+        'consultation_reason',
+        'notes',
+    ];
 
-### 7.5. Rutas de Doctor
+    protected $casts = [
+        'appointment_date_time' => 'datetime',
+    ];
 
-**Middleware:** `auth`, `checkRole:doctor`
+    /**
+     * Relación con paciente (User)
+     */
+    public function patient()
+    {
+        return $this->belongsTo(User::class, 'patient_id');
+    }
 
-```php
-GET  /doctor/dashboard   → Dashboard del doctor
-POST /doctor/appointments/{appointment}/update-status → Actualizar estado de cita
-```
+    /**
+     * Relación con doctor
+     */
+    public function doctor()
+    {
+        return $this->belongsTo(Doctor::class);
+    }
 
-### 7.6. Rutas de Administrador
+    /**
+     * Scope: Citas pendientes
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
 
-**Middleware:** `auth`, `checkRole:admin`
+    /**
+     * Scope: Citas confirmadas
+     */
+    public function scopeConfirmed($query)
+    {
+        return $query->where('status', 'confirmed');
+    }
 
-```php
-GET  /admin/dashboard    → Dashboard administrativo
+    /**
+     * Verificar si la cita está pendiente
+     */
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
 
-// Gestión de Doctores (AJAX)
-POST   /admin/doctors/store        → Crear doctor
-PUT    /admin/doctors/{doctor}     → Actualizar doctor
-DELETE /admin/doctors/{doctor}     → Eliminar doctor
-
-// Gestión de Horarios (AJAX)
-POST   /admin/schedules/store      → Crear horario
-PUT    /admin/schedules/{schedule} → Actualizar horario
-DELETE /admin/schedules/{schedule} → Eliminar horario
-
-// Gestión de Usuarios (AJAX)
-PUT    /admin/users/{user}         → Actualizar usuario
-DELETE /admin/users/{user}         → Eliminar usuario
+    /**
+     * Verificar si la cita está confirmada
+     */
+    public function isConfirmed(): bool
+    {
+        return $this->status === 'confirmed';
+    }
+}
 ```
 
 ---
 
-## 8. Middleware y Seguridad
+## Observers y Eventos
 
-### 8.1. Middleware CheckRole
+### Concepto de Observers
 
-**Ubicación:** `app/Http/Middleware/CheckRole.php`
+Los **Observers** en Laravel permiten escuchar eventos del ciclo de vida de los modelos Eloquent y ejecutar lógica automáticamente.
 
-**Responsabilidad:** Verificar que el usuario autenticado tenga el rol adecuado para acceder a rutas protegidas.
+#### ¿Por qué usar Observers?
 
-**Uso:**
+- ✅ **Separación de responsabilidades**: Lógica de negocio fuera de controllers
+- ✅ **Reutilización**: Un observer se ejecuta sin importar dónde se modifique el modelo
+- ✅ **Mantenibilidad**: Código más limpio y organizado
+- ✅ **Consistencia**: Garantiza que ciertas acciones siempre se ejecuten
+
+### Eventos Disponibles
+
+| Evento | Momento de Ejecución | Uso Común |
+|--------|---------------------|----------|
+| `creating` | **ANTES** de crear el registro | Validaciones, asignación de valores default |
+| `created` | **DESPUÉS** de crear el registro | Notificaciones, logs |
+| `updating` | **ANTES** de actualizar el registro | Validaciones, auditoría |
+| `updated` | **DESPUÉS** de actualizar el registro | Notificaciones de cambios |
+| `saving` | **ANTES** de guardar (crear o actualizar) | Validaciones generales |
+| `saved` | **DESPUÉS** de guardar (crear o actualizar) | Logs, notificaciones |
+| `deleting` | **ANTES** de eliminar (incluye soft delete) | Limpiar datos relacionados |
+| `deleted` | **DESPUÉS** de eliminar | Logs, notificaciones |
+| `restoring` | **ANTES** de restaurar (soft delete) | Validaciones, preparar datos |
+| `restored` | **DESPUÉS** de restaurar | Notificaciones, logs |
+| `forceDeleted` | Al eliminar permanentemente (sin soft delete) | Limpieza final |
+
+### DoctorObserver - Implementación Completa
+
 ```php
+<?php
+
+namespace App\Observers;
+
+use App\Models\Doctor;
+use Illuminate\Support\Facades\Log;
+
+class DoctorObserver
+{
+    /**
+     * Se ejecuta DESPUÉS de crear un doctor
+     * Asegura que el usuario asociado tenga rol 'doctor' y esté activo
+     */
+    public function created(Doctor $doctor): void
+    {
+        if ($doctor->user && $doctor->user->role !== 'doctor') {
+            $doctor->user->update([
+                'role' => 'doctor',
+                'active' => true,
+            ]);
+            
+            Log::info("Usuario {$doctor->user->id} actualizado a rol doctor");
+        }
+    }
+
+    /**
+     * Se ejecuta ANTES de hacer soft delete del doctor
+     * CRÍTICO: Cambia el usuario asociado a paciente inactivo
+     * 
+     * ¿Por qué 'deleting' y no 'deleted'?
+     * - 'deleting' se ejecuta ANTES del soft delete
+     * - Permite modificar datos relacionados en la misma transacción
+     * - 'deleted' sería DESPUÉS, cuando puede haber problemas de timing
+     */
+    public function deleting(Doctor $doctor): void
+    {
+        Log::info("=== OBSERVER DELETING ===");
+        Log::info("Doctor ID: {$doctor->id}, User ID: {$doctor->user_id}");
+        
+        if ($doctor->user) {
+            Log::info("Usuario ANTES - Role: {$doctor->user->role}, Active: " . ($doctor->user->active ? '1' : '0'));
+            
+            // Cambiar usuario a paciente inactivo
+            $doctor->user->update([
+                'role' => 'patient',
+                'active' => false,
+            ]);
+            
+            // Recargar para confirmar cambios
+            $doctor->user->refresh();
+            
+            Log::info("Usuario DESPUÉS - Role: {$doctor->user->role}, Active: " . ($doctor->user->active ? '1' : '0'));
+        } else {
+            Log::warning("Doctor {$doctor->id} no tiene usuario asociado");
+        }
+    }
+
+    /**
+     * Se ejecuta ANTES de restaurar un doctor (revertir soft delete)
+     * Devuelve el rol 'doctor' al usuario y lo activa
+     */
+    public function restoring(Doctor $doctor): void
+    {
+        Log::info("=== OBSERVER RESTORING ===");
+        Log::info("Doctor ID: {$doctor->id}");
+        
+        if ($doctor->user) {
+            Log::info("Restaurando usuario {$doctor->user->id}");
+            
+            $doctor->user->update([
+                'role' => 'doctor',
+                'active' => true,
+            ]);
+            
+            $doctor->user->refresh();
+            
+            Log::info("Usuario restaurado - Role: {$doctor->user->role}, Active: " . ($doctor->user->active ? '1' : '0'));
+        }
+    }
+
+    /**
+     * Se ejecuta al eliminar permanentemente (force delete)
+     * Opcional: Agregar lógica de limpieza final
+     */
+    public function forceDeleted(Doctor $doctor): void
+    {
+        Log::warning("Doctor {$doctor->id} eliminado permanentemente");
+        // Aquí podrías eliminar archivos relacionados, etc.
+    }
+}
+```
+
+### Registrar Observer en AppServiceProvider
+
+```php
+<?php
+
+namespace App\Providers;
+
+use App\Models\Doctor;
+use App\Models\User;
+use App\Observers\DoctorObserver;
+use App\Observers\UserObserver;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     * Aquí registramos los Observers
+     */
+    public function boot(): void
+    {
+        // Registrar DoctorObserver
+        Doctor::observe(DoctorObserver::class);
+        
+        // Registrar UserObserver (si existe)
+        // User::observe(UserObserver::class);
+    }
+}
+```
+
+### Flujo de Ejecución con Observer
+
+```
+Ejemplo: Desactivar un doctor
+
+1. Admin hace clic en "Desactivar" en la interfaz
+   ↓
+2. Petición POST a /admin/doctors/{id}/toggle
+   ↓
+3. DoctorController::toggleStatus() ejecuta:
+   $doctor->delete(); // Soft delete
+   ↓
+4. Laravel detecta el delete() y dispara eventos:
+   ┌─────────────────────────────────┐
+   │ Evento 'deleting' (ANTES)       │
+   ├─────────────────────────────────┤
+   │ DoctorObserver::deleting()      │
+   │  → user->role = 'patient'       │
+   │  → user->active = false         │
+   │  → save()                       │
+   └─────────────────────────────────┘
+   ↓
+5. Laravel completa el soft delete:
+   doctor->deleted_at = now()
+   ↓
+6. Evento 'deleted' (DESPUÉS)
+   ↓
+7. Controlador devuelve respuesta:
+   return redirect()->with('success', 'Doctor desactivado');
+   ↓
+8. Vista se actualiza mostrando:
+   - Doctor con badge "Inactivo"
+   - Usuario con rol "Paciente" e "Inactivo"
+```
+
+---
+
+## Soft Deletes
+
+### Concepto
+
+**Soft Delete** es una técnica que no elimina físicamente el registro de la base de datos, sino que marca un campo `deleted_at` con la fecha de "eliminación".
+
+#### Ventajas
+
+- ✅ **Recuperación de datos**: Puedes restaurar registros eliminados
+- ✅ **Auditoría**: Mantiene historial de lo que se eliminó
+- ✅ **Integridad referencial**: No rompe relaciones con otros registros
+- ✅ **Análisis**: Puedes analizar qué se eliminó y cuándo
+
+### Implementación en Modelos
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Doctor extends Model
+{
+    use SoftDeletes; // ← Trait que habilita soft deletes
+
+    protected $dates = ['deleted_at']; // Laravel 11+
+    // o
+    protected $casts = [
+        'deleted_at' => 'datetime', // Laravel 12+
+    ];
+}
+```
+
+### Migración con Soft Deletes
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('doctors', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('license_number')->unique();
+            $table->string('specialty');
+            $table->text('biography')->nullable();
+            $table->boolean('active')->default(true);
+            $table->timestamps();
+            $table->softDeletes(); // ← Agrega columna deleted_at
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('doctors');
+    }
+};
+```
+
+### Consultas con Soft Deletes
+
+```php
+// ==================== CONSULTAS BÁSICAS ====================
+
+// Obtener solo registros NO eliminados (comportamiento por defecto)
+$doctors = Doctor::all();
+$doctors = Doctor::where('specialty', 'Cardiología')->get();
+
+// Incluir registros eliminados
+$allDoctors = Doctor::withTrashed()->get();
+
+// Obtener SOLO registros eliminados
+$deletedDoctors = Doctor::onlyTrashed()->get();
+
+// ==================== OPERACIONES ====================
+
+// Soft delete (marca deleted_at)
+$doctor = Doctor::find(1);
+$doctor->delete();
+// Resultado: deleted_at = '2025-12-18 22:30:00'
+
+// Verificar si está eliminado
+if ($doctor->trashed()) {
+    echo "Doctor está inactivo (soft deleted)";
+}
+
+// Restaurar (quita deleted_at)
+$doctor->restore();
+// Resultado: deleted_at = NULL
+
+// Eliminar permanentemente (force delete)
+$doctor->forceDelete();
+// Resultado: Registro borrado físicamente de la BD
+
+// ==================== CONSULTAS AVANZADAS ====================
+
+// Contar doctores activos
+$activeCount = Doctor::count();
+
+// Contar doctores eliminados
+$deletedCount = Doctor::onlyTrashed()->count();
+
+// Contar todos (activos + eliminados)
+$totalCount = Doctor::withTrashed()->count();
+
+// Buscar por ID incluyendo eliminados
+$doctor = Doctor::withTrashed()->find(1);
+
+// Restaurar múltiples registros
+Doctor::onlyTrashed()
+    ->where('specialty', 'Cardiología')
+    ->restore();
+
+// Eliminar permanentemente registros antiguos
+Doctor::onlyTrashed()
+    ->where('deleted_at', '<', now()->subMonths(6))
+    ->forceDelete();
+```
+
+### Relaciones con Soft Deletes
+
+```php
+// Obtener citas de un doctor incluyendo si está eliminado
+$doctor = Doctor::withTrashed()->find(1);
+$appointments = $doctor->appointments;
+
+// Obtener solo citas de doctores activos (no eliminados)
+$appointments = Appointment::whereHas('doctor', function($query) {
+    $query->whereNull('deleted_at');
+})->get();
+
+// AdminDashboardController - Incluir doctores eliminados
+public function index()
+{
+    // Incluir doctores con soft delete
+    $doctors = Doctor::withTrashed()->with('user')->get();
+    
+    // Solo horarios de doctores activos
+    $schedules = Schedule::whereHas('doctor', function($query) {
+        $query->whereNull('deleted_at');
+    })->with('doctor.user')->get();
+    
+    return view('dashboard.admin.index', compact('doctors', 'schedules'));
+}
+```
+
+---
+
+## Middleware y Autorización
+
+### CheckRole Middleware
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class CheckRole
+{
+    /**
+     * Verifica que el usuario tenga uno de los roles permitidos
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  string  ...$roles  Roles permitidos (patient, doctor, admin)
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
+    {
+        // Verificar si hay usuario autenticado
+        if (!$request->user()) {
+            return redirect('login')->with('error', 'Debe iniciar sesión');
+        }
+
+        // Verificar si el rol del usuario está en la lista de permitidos
+        if (!in_array($request->user()->role, $roles)) {
+            abort(403, 'No tiene permisos para acceder a esta sección');
+        }
+
+        return $next($request);
+    }
+}
+```
+
+### Registrar Middleware
+
+```php
+// bootstrap/app.php (Laravel 12)
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        // Registrar middleware con alias
+        $middleware->alias([
+            'checkRole' => \App\Http\Middleware\CheckRole::class,
+        ]);
+    })
+    ->create();
+```
+
+### Uso en Rutas
+
+```php
+// routes/web.php
+
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\DoctorDashboardController;
+use App\Http\Controllers\PatientDashboardController;
+
+// ==================== RUTAS DE PACIENTE ====================
+Route::middleware(['auth', 'checkRole:patient'])->group(function () {
+    Route::get('/paciente/dashboard', [PatientDashboardController::class, 'index'])
+        ->name('patient.dashboard');
+    
+    Route::get('/citas', [AppointmentController::class, 'index'])
+        ->name('appointments.index');
+    
+    Route::post('/citas', [AppointmentController::class, 'store'])
+        ->name('appointments.store');
+});
+
+// ==================== RUTAS DE DOCTOR ====================
+Route::middleware(['auth', 'checkRole:doctor'])->group(function () {
+    Route::get('/doctor/dashboard', [DoctorDashboardController::class, 'index'])
+        ->name('doctor.dashboard');
+    
+    Route::post('/doctor/citas/{id}/confirmar', [DoctorDashboardController::class, 'confirm'])
+        ->name('doctor.appointments.confirm');
+});
+
+// ==================== RUTAS DE ADMIN ====================
 Route::middleware(['auth', 'checkRole:admin'])->group(function () {
-    // Rutas solo para administradores
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+        ->name('admin.dashboard');
+    
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Doctores
+        Route::patch('/doctors/{doctor}/toggle', [AdminDoctorController::class, 'toggleStatus'])
+            ->name('doctors.toggle');
+        
+        // Usuarios
+        Route::patch('/users/{user}/toggle', [AdminUserController::class, 'toggleStatus'])
+            ->name('users.toggle');
+    });
+});
+
+// ==================== RUTAS MULTI-ROL ====================
+// Accesible por doctores Y administradores
+Route::middleware(['auth', 'checkRole:doctor,admin'])->group(function () {
+    Route::get('/estadisticas', [StatsController::class, 'index']);
 });
 ```
-
-**Roles disponibles:**
-- `admin`: Acceso total al sistema
-- `doctor`: Acceso a gestión de citas propias
-- `patient`: Acceso a agendamiento de citas
-
-### 8.2. Autenticación
-
-- **Sistema:** Laravel Authentication (session-based)
-- **Encriptación:** Bcrypt para contraseñas
-- **Protección CSRF:** Tokens en todos los formularios POST/PUT/DELETE
-
-### 8.3. Validaciones de Seguridad
-
-**En controladores:**
-```php
-// Validación de entrada
-$request->validate([
-    'email' => 'required|email|unique:users',
-    'password' => 'required|min:8',
-]);
-
-// Autorización de acciones
-$this->authorize('update', $appointment);
-```
-
-**En rutas:**
-- Uso de `middleware('auth')` para rutas protegidas
-- Verificación de roles con `checkRole`
-- Validación de propietario en operaciones sensibles
 
 ---
 
-## 9. Migraciones de Base de Datos
+## Validaciones Personalizadas
 
-### 9.1. create_users_table.php
+### Form Request - StoreAppointmentRequest
 
 ```php
-Schema::create('users', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->string('email')->unique();
-    $table->string('password');
-    $table->enum('role', ['admin', 'doctor', 'patient'])->default('patient');
-    $table->boolean('active')->default(true);
-    $table->timestamp('email_verified_at')->nullable();
-    $table->rememberToken();
-    $table->timestamps();
-});
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Appointment;
+use App\Models\Doctor;
+
+class StoreAppointmentRequest extends FormRequest
+{
+    /**
+     * Determinar si el usuario está autorizado para hacer esta petición
+     */
+    public function authorize(): bool
+    {
+        // Solo pacientes pueden crear citas
+        return $this->user() && $this->user()->role === 'patient';
+    }
+
+    /**
+     * Reglas de validación
+     */
+    public function rules(): array
+    {
+        return [
+            'doctor_id' => [
+                'required',
+                'exists:doctors,id',
+                // Validación personalizada: Doctor debe estar activo
+                function ($attribute, $value, $fail) {
+                    $doctor = Doctor::find($value);
+                    if (!$doctor || $doctor->trashed()) {
+                        $fail('El doctor seleccionado no está disponible.');
+                    }
+                },
+            ],
+            'appointment_date_time' => [
+                'required',
+                'date',
+                'after:now', // Fecha futura
+                // Validación personalizada: Verificar disponibilidad
+                function ($attribute, $value, $fail) {
+                    // Verificar que no haya otra cita en ese horario
+                    $exists = Appointment::where('doctor_id', $this->doctor_id)
+                        ->where('appointment_date_time', $value)
+                        ->whereIn('status', ['pending', 'confirmed'])
+                        ->exists();
+                    
+                    if ($exists) {
+                        $fail('Ya existe una cita en ese horario. Por favor, elija otro.');
+                    }
+                    
+                    // TODO: Verificar que la hora esté dentro del horario del doctor
+                    // $this->validateDoctorSchedule($value, $fail);
+                },
+            ],
+            'consultation_reason' => [
+                'required',
+                'string',
+                'max:500',
+                'min:10',
+            ],
+        ];
+    }
+
+    /**
+     * Mensajes de error personalizados
+     */
+    public function messages(): array
+    {
+        return [
+            'doctor_id.required' => 'Debe seleccionar un doctor.',
+            'doctor_id.exists' => 'El doctor seleccionado no existe.',
+            'appointment_date_time.required' => 'Debe especificar fecha y hora.',
+            'appointment_date_time.after' => 'La fecha debe ser futura.',
+            'consultation_reason.required' => 'Debe indicar el motivo de la consulta.',
+            'consultation_reason.min' => 'El motivo debe tener al menos 10 caracteres.',
+            'consultation_reason.max' => 'El motivo no puede exceder 500 caracteres.',
+        ];
+    }
+
+    /**
+     * Atributos personalizados para mensajes de error
+     */
+    public function attributes(): array
+    {
+        return [
+            'doctor_id' => 'doctor',
+            'appointment_date_time' => 'fecha de la cita',
+            'consultation_reason' => 'motivo de consulta',
+        ];
+    }
+
+    /**
+     * Validación personalizada: Verificar horario del doctor
+     */
+    protected function validateDoctorSchedule($dateTime, $fail)
+    {
+        $doctor = Doctor::find($this->doctor_id);
+        if (!$doctor) return;
+
+        $date = \Carbon\Carbon::parse($dateTime);
+        $dayOfWeek = $date->dayOfWeek; // 0 = Domingo, 6 = Sábado
+        $time = $date->format('H:i:s');
+
+        // Verificar si el doctor trabaja ese día
+        $schedule = $doctor->schedules()
+            ->where('day_of_week', $dayOfWeek)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$schedule) {
+            $fail('El doctor no atiende ese día.');
+            return;
+        }
+
+        // Verificar si la hora está dentro del rango
+        if ($time < $schedule->start_time || $time > $schedule->end_time) {
+            $fail("El doctor solo atiende de {$schedule->start_time} a {$schedule->end_time}.");
+        }
+    }
+}
 ```
 
-### 9.2. create_doctors_table.php
+### Uso en Controller
 
 ```php
-Schema::create('doctors', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->onDelete('cascade');
-    $table->string('license_number')->unique();
-    $table->string('specialty');
-    $table->text('biography')->nullable();
-    $table->string('photo_url')->nullable();
-    $table->boolean('active')->default(true);
-    $table->timestamps();
-});
+public function store(StoreAppointmentRequest $request)
+{
+    // Los datos ya están validados por el FormRequest
+    $validated = $request->validated();
+    
+    $appointment = Appointment::create([
+        'patient_id' => Auth::id(),
+        'doctor_id' => $validated['doctor_id'],
+        'appointment_date_time' => $validated['appointment_date_time'],
+        'consultation_reason' => $validated['consultation_reason'],
+        'status' => 'pending',
+    ]);
+    
+    return redirect()->route('appointments.index')
+        ->with('success', 'Cita creada exitosamente. Esperando confirmación del doctor.');
+}
 ```
 
-### 9.3. create_schedules_table.php
+---
 
-```php
-Schema::create('schedules', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('doctor_id')->constrained()->onDelete('cascade');
-    $table->enum('day_of_week', ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
-    $table->time('start_time');
-    $table->time('end_time');
-    $table->integer('interval_minutes')->default(30);
-    $table->boolean('is_active')->default(true);
-    $table->timestamps();
-});
+## Flujos de Negocio
+
+### Flujo Completo: Crear y Gestionar una Cita
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  PASO 1: Paciente Reserva Cita                          │
+└─────────────────────────────────────────────────────────┘
+
+Paciente:
+1. Login → /login
+2. Dashboard → /paciente/dashboard
+3. Click "Agendar Cita"
+4. Selecciona doctor por especialidad
+5. Elige fecha y hora
+6. Ingresa motivo de consulta
+7. Submit formulario
+
+Sistema:
+1. Valida datos (StoreAppointmentRequest)
+   - Doctor existe y está activo
+   - Fecha es futura
+   - No hay otra cita en ese horario
+   - Motivo es válido
+2. Crea Appointment con status='pending'
+3. Redirige a /citas con mensaje de éxito
+
+Estado:
+- Appointment.status = 'pending'
+- Visible para doctor en su dashboard
+
+┌─────────────────────────────────────────────────────────┐
+│  PASO 2: Doctor Revisa y Confirma Cita                  │
+└─────────────────────────────────────────────────────────┘
+
+Doctor:
+1. Login → /login
+2. Dashboard → /doctor/dashboard
+3. Ve sección "Citas Pendientes"
+4. Click en cita para ver detalles:
+   - Nombre del paciente
+   - Fecha y hora
+   - Motivo de consulta
+5. Decide: Confirmar o Rechazar
+6. Click "Confirmar Cita"
+
+Sistema:
+1. DoctorDashboardController::confirm($id)
+2. Valida que el doctor sea el asignado
+3. Actualiza Appointment.status = 'confirmed'
+4. (Opcional) Envía notificación al paciente
+5. Redirige con mensaje de éxito
+
+Estado:
+- Appointment.status = 'confirmed'
+- Visible en "Citas Confirmadas" del doctor
+- Visible en "Mis Citas" del paciente con badge verde
+
+┌─────────────────────────────────────────────────────────┐
+│  PASO 3: Día de la Cita - Doctor Atiende Paciente      │
+└─────────────────────────────────────────────────────────┘
+
+Doctor:
+1. Dashboard → /doctor/dashboard
+2. Ve "Citas Confirmadas" para hoy
+3. Atiende al paciente (fuera del sistema)
+4. Después de la consulta:
+   - Click "Marcar como Atendida"
+   - (Opcional) Agrega notas médicas
+   - Submit
+
+Sistema:
+1. DoctorDashboardController::markAttended($id)
+2. Actualiza:
+   - Appointment.status = 'attended'
+   - Appointment.notes = notas del doctor
+3. Redirige con mensaje de éxito
+
+Estado:
+- Appointment.status = 'attended'
+- Cita archivada en historial
+- Paciente puede ver notas médicas
+
+┌─────────────────────────────────────────────────────────┐
+│  ALTERNATIVA: Cancelación de Cita                       │
+└─────────────────────────────────────────────────────────┘
+
+Paciente o Doctor:
+1. Click "Cancelar Cita"
+2. Confirma acción
+
+Sistema:
+1. Actualiza Appointment.status = 'cancelled'
+2. (Opcional) Notifica a la otra parte
+3. Libera horario para nuevas citas
+
+Estado:
+- Appointment.status = 'cancelled'
+- Ya no aparece en secciones activas
+- Visible en historial
 ```
 
-### 9.4. create_appointments_table.php
+### Estados de Cita - Máquina de Estados
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                ESTADOS DE APPOINTMENT                    │
+└─────────────────────────────────────────────────────────┘
+
+          ┌──────────────┐
+          │   pending    │ ← Cita creada por paciente
+          └──────┬───────┘
+                 │
+      ┌──────────┴──────────┐
+      │                     │
+      ▼                     ▼
+┌─────────────┐       ┌─────────────┐
+│ confirmed   │       │ cancelled   │ ← Rechazada por doctor
+│             │       │             │    o paciente
+└──────┬──────┘       └─────────────┘
+       │
+       │ Doctor marca como atendida
+       ▼
+┌─────────────┐
+│  attended   │ ← Cita completada
+└─────────────┘
+
+Transiciones Permitidas:
+
+pending → confirmed   (Doctor confirma)
+pending → cancelled   (Doctor rechaza o paciente cancela)
+confirmed → attended  (Doctor marca como atendida)
+confirmed → cancelled (Paciente cancela)
+
+Transiciones NO Permitidas:
+
+attended → cualquier otro estado (ya fue atendida)
+cancelled → cualquier otro estado (ya fue cancelada)
+```
+
+---
+
+## Gestión de Estados
+
+### Implementación en Controller
 
 ```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Appointment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class DoctorDashboardController extends Controller
+{
+    /**
+     * Confirmar cita pendiente
+     */
+    public function confirmAppointment(Request $request, $appointmentId)
+    {
+        $appointment = Appointment::findOrFail($appointmentId);
+        
+        // Verificar que el doctor sea el asignado
+        if ($appointment->doctor->user_id !== Auth::id()) {
+            abort(403, 'No autorizado');
+        }
+        
+        // Verificar que esté pendiente
+        if ($appointment->status !== 'pending') {
+            return back()->with('error', 'La cita ya no está pendiente.');
+        }
+        
+        // Cambiar estado
+        $appointment->update(['status' => 'confirmed']);
+        
+        // TODO: Enviar notificación al paciente
+        
+        return back()->with('success', 'Cita confirmada exitosamente.');
+    }
+    
+    /**
+     * Marcar cita como atendida
+     */
+    public function markAttended(Request $request, $appointmentId)
+    {
+        $request->validate([
+            'notes' => 'nullable|string|max:1000',
+        ]);
+        
+        $appointment = Appointment::findOrFail($appointmentId);
+        
+        // Verificar que el doctor sea el asignado
+        if ($appointment->doctor->user_id !== Auth::id()) {
+            abort(403, 'No autorizado');
+        }
+        
+        // Verificar que esté confirmada
+        if ($appointment->status !== 'confirmed') {
+            return back()->with('error', 'Solo se pueden marcar como atendidas las citas confirmadas.');
+        }
+        
+        // Cambiar estado y agregar notas
+        $appointment->update([
+            'status' => 'attended',
+            'notes' => $request->notes,
+        ]);
+        
+        return back()->with('success', 'Cita marcada como atendida.');
+    }
+    
+    /**
+     * Cancelar cita
+     */
+    public function cancelAppointment($appointmentId)
+    {
+        $appointment = Appointment::findOrFail($appointmentId);
+        
+        // Verificar autorización (doctor asignado o admin)
+        if ($appointment->doctor->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+            abort(403, 'No autorizado');
+        }
+        
+        // Verificar que NO esté atendida
+        if ($appointment->status === 'attended') {
+            return back()->with('error', 'No se puede cancelar una cita ya atendida.');
+        }
+        
+        // Cambiar estado
+        $appointment->update(['status' => 'cancelled']);
+        
+        return back()->with('success', 'Cita cancelada.');
+    }
+}
+```
+
+---
+
+## Optimizaciones y Performance
+
+### Eager Loading (Carga Anticipada)
+
+```php
+// ❌ PROBLEMA: N+1 Query
+$doctors = Doctor::all();
+foreach ($doctors as $doctor) {
+    echo $doctor->user->name; // 1 query por cada doctor
+}
+// Total: 1 query inicial + N queries (uno por doctor) = N+1
+
+// ✅ SOLUCIÓN: Eager Loading
+$doctors = Doctor::with('user')->get();
+foreach ($doctors as $doctor) {
+    echo $doctor->user->name; // Sin queries adicionales
+}
+// Total: 2 queries (1 para doctors, 1 para users)
+
+// ✅ Eager Loading múltiple
+$appointments = Appointment::with(['patient', 'doctor.user'])->get();
+// Total: 3 queries (appointments, users, doctors)
+
+// ✅ Eager Loading condicional
+$doctors = Doctor::with(['schedules' => function($query) {
+    $query->where('is_active', true);
+}])->get();
+```
+
+### Paginación
+
+```php
+// ❌ Cargar todos los registros (lento con muchos datos)
+$appointments = Appointment::all();
+
+// ✅ Paginación
+$appointments = Appointment::paginate(20); // 20 por página
+
+// En la vista Blade
+{{ $appointments->links() }} // Links de paginación
+
+// Paginación simple (solo siguiente/anterior)
+$appointments = Appointment::simplePaginate(20);
+```
+
+### Caché
+
+```php
+use Illuminate\Support\Facades\Cache;
+
+// Cachear doctores activos por 1 hora
+$doctors = Cache::remember('doctors.active', 3600, function () {
+    return Doctor::active()->with('user')->get();
+});
+
+// Invalidar caché cuando se actualiza
+public function store(Request $request)
+{
+    $doctor = Doctor::create($request->validated());
+    
+    // Limpiar caché
+    Cache::forget('doctors.active');
+    
+    return redirect()->back();
+}
+```
+
+### Índices en Base de Datos
+
+```php
+// Migración con índices
 Schema::create('appointments', function (Blueprint $table) {
     $table->id();
-    $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
+    $table->foreignId('patient_id')->constrained()->onDelete('cascade');
     $table->foreignId('doctor_id')->constrained()->onDelete('cascade');
     $table->dateTime('appointment_date_time');
-    $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
-    $table->text('consultation_reason');
-    $table->text('notes')->nullable();
+    $table->enum('status', ['pending', 'confirmed', 'attended', 'cancelled']);
     $table->timestamps();
+    
+    // Índices para mejorar performance
+    $table->index('patient_id');
+    $table->index('doctor_id');
+    $table->index('appointment_date_time');
+    $table->index('status');
+    $table->unique(['doctor_id', 'appointment_date_time']); // Prevenir duplicados
 });
 ```
 
-### 9.5. Índices Recomendados
-
-```php
-// En appointments
-$table->index('appointment_date_time');
-$table->index(['doctor_id', 'status']);
-$table->index(['patient_id', 'status']);
-
-// En schedules
-$table->index(['doctor_id', 'day_of_week']);
-```
-
 ---
 
-## 10. Consideraciones de Seguridad
+## Seguridad Avanzada
 
-### 10.1. Autenticación y Autorización
-- **Session-based authentication:** Laravel gestiona sesiones seguras
-- **Password hashing:** Bcrypt automático en User model
-- **Middleware de roles:** Verificación de permisos en cada ruta protegida
-- **CSRF Protection:** Tokens en todos los formularios
+### Rate Limiting
 
-### 10.2. Validación de Datos
-
-**Nivel Controlador:**
 ```php
+// routes/web.php
+use Illuminate\Support\Facades\RateLimiter;
+
+RateLimiter::for('api', function (Request $request) {
+    return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+});
+
+// Aplicar en rutas
+Route::middleware('throttle:60,1')->group(function () {
+    // Máximo 60 peticiones por minuto
+});
+```
+
+### Logging de Acciones Críticas
+
+```php
+use Illuminate\Support\Facades\Log;
+
+public function toggleStatus($userId)
+{
+    $user = User::findOrFail($userId);
+    $previousState = $user->active;
+    
+    $user->active = !$user->active;
+    $user->save();
+    
+    // Log de auditoría
+    Log::channel('audit')->info('Usuario modificado', [
+        'admin_id' => Auth::id(),
+        'admin_email' => Auth::user()->email,
+        'user_id' => $user->id,
+        'user_email' => $user->email,
+        'action' => $user->active ? 'activated' : 'deactivated',
+        'previous_state' => $previousState,
+        'new_state' => $user->active,
+        'timestamp' => now(),
+        'ip' => request()->ip(),
+    ]);
+    
+    return back()->with('success', 'Usuario actualizado');
+}
+```
+
+### Sanitización de Inputs
+
+```php
+use Illuminate\Support\Str;
+
 $request->validate([
-    'email' => 'required|email|unique:users',
-    'appointment_date_time' => 'required|date|after:now',
-    'doctor_id' => 'required|exists:doctors,id',
+    'bio' => 'required|string',
+]);
+
+// Sanitizar HTML peligroso
+$safeBio = strip_tags($request->bio, '<p><br><b><i><u>');
+
+// O usar librerías especializadas
+$safeBio = clean($request->bio); // Laravel HTML Purifier
+
+$doctor->update([
+    'biography' => $safeBio,
 ]);
 ```
 
-**Nivel Base de Datos:**
-- Restricciones UNIQUE en campos críticos
-- Foreign Keys con ON DELETE CASCADE
-- Validación de ENUM para estados
+---
 
-### 10.3. Prevención de Vulnerabilidades
+## Conclusión
 
-- **SQL Injection:** Uso de Eloquent ORM y Query Builder
-- **XSS:** Blade templates escapan automáticamente `{{ $variable }}`
-- **CSRF:** Middleware `VerifyCsrfToken` activo
-- **Mass Assignment:** Definición explícita de `$fillable` en modelos
+Esta documentación técnica cubre los aspectos avanzados de **MediConnect**:
 
-### 10.4. Control de Acceso
+- ✅ **Arquitectura MVC**: Separación clara de capas
+- ✅ **Eloquent Avanzado**: Relaciones, scopes, eager loading
+- ✅ **Observers**: Automatización de lógica de negocio
+- ✅ **Soft Deletes**: Recuperación de datos eliminados
+- ✅ **Autorización**: Control de acceso basado en roles
+- ✅ **Validaciones**: Form Requests con lógica personalizada
+- ✅ **Performance**: Optimizaciones y buenas prácticas
+- ✅ **Seguridad**: Rate limiting, logging, sanitización
 
-```php
-// Verificar que el paciente solo cancele sus propias citas
-if ($appointment->patient_id !== auth()->id()) {
-    abort(403, 'No autorizado');
-}
+### Próximos Pasos
 
-// Verificar que el doctor solo gestione sus citas
-if ($appointment->doctor_id !== auth()->user()->doctor->id) {
-    abort(403, 'No autorizado');
-}
-```
+1. Implementar sistema de notificaciones (email/SMS)
+2. Agregar tests automatizados (Feature y Unit)
+3. Crear API RESTful con Laravel Sanctum
+4. Implementar chat en tiempo real con Laravel Echo
+5. Dashboard con gráficos interactivos
+6. Exportación de reportes en PDF
 
 ---
 
-## 11. Instalación y Configuración
-### 11.1. Requisitos del Sistema
-
-- **PHP:** >= 8.2
-- **Composer:** >= 2.0
-- **Base de datos:** MySQL 8.0+ / MariaDB 10.3+
-- **Node.js:** >= 18.x (para assets)
-- **Extensiones PHP:** OpenSSL, PDO, Mbstring, Tokenizer, XML, Ctype, JSON
-
-### 11.2. Pasos de Instalación
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/guillencristofer911-star/Gestion-Citas-Medicas.git
-cd Gestion-Citas-Medicas/Citas-Medicas
-
-# 2. Instalar dependencias PHP
-composer install
-
-# 3. Copiar archivo de configuración
-cp .env.example .env
-
-# 4. Generar clave de aplicación
-php artisan key:generate
-
-# 5. Configurar base de datos en .env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=citas_medicas
-DB_USERNAME=root
-DB_PASSWORD=
-
-# 6. Ejecutar migraciones
-php artisan migrate
-
-# 7. (Opcional) Ejecutar seeders
-php artisan db:seed
-
-# 8. Instalar dependencias frontend
-npm install
-npm run build
-
-# 9. Levantar servidor de desarrollo
-php artisan serve
-```
-
-### 11.3. Configuración de Roles Iniciales
-
-**Crear usuario administrador manualmente:**
-
-```bash
-php artisan tinker
-```
-
-```php
-$user = \App\Models\User::create([
-    'name' => 'Administrador',
-    'email' => 'admin@example.com',
-    'password' => bcrypt('password'),
-    'role' => 'admin',
-    'active' => true,
-]);
-```
-
-### 11.4. Permisos de Storage
-
-```bash
-chmod -R 775 storage
-chmod -R 775 bootstrap/cache
-```
-
----
-
-## 12. Testing
-
-### 12.1. Pruebas Unitarias Sugeridas
-
-**Modelos:**
-```php
-// tests/Unit/AppointmentTest.php
-public function test_appointment_belongs_to_patient()
-public function test_appointment_belongs_to_doctor()
-public function test_appointment_status_enum_validation()
-```
-
-**Controladores:**
-```php
-// tests/Feature/AppointmentControllerTest.php
-public function test_patient_can_create_appointment()
-public function test_patient_cannot_create_past_appointment()
-public function test_patient_can_cancel_own_appointment()
-```
-
-### 12.2. Ejecutar Tests
-
-```bash
-# Todos los tests
-php artisan test
-
-# Con cobertura
-php artisan test --coverage
-
-# Tests específicos
-php artisan test --filter AppointmentTest
-```
-
----
-
-## 13. Mejoras Futuras Sugeridas
-
-### 13.1. Funcionalidades
-
-**Sistema de notificaciones:**
-- Email al crear/confirmar/cancelar citas
-- Recordatorios automáticos 24h antes de la cita
-
-**Calendario interactivo:**
-- Vista mensual y semanal de citas
-- Funcionalidad drag & drop para reagendar
-
-**Historial médico:**
-- Registro de consultas previas del paciente
-- Sistema de archivos adjuntos (recetas, exámenes)
-
-**Sistema de pagos:**
-- Integración con pasarelas de pago
-- Gestión de facturación electrónica
-
-**Chat en tiempo real:**
-- Comunicación directa doctor-paciente
-- Uso de Laravel Echo + Pusher
-
-**Reportes y estadísticas:**
-- Dashboard con gráficos interactivos
-- Exportación a PDF y Excel
-
-### 13.2. Técnicas
-
-**API REST:**
-- Endpoints para aplicaciones móviles
-- Documentación con Swagger/OpenAPI
-
-**Testing automatizado:**
-- Cobertura mínima del 80%
-- Integración CI/CD con GitHub Actions
-
-**Optimización:**
-- Sistema de caché para consultas frecuentes
-- Lazy loading de relaciones Eloquent
-- Paginación eficiente de listados
-
-**Seguridad:**
-- Autenticación de dos factores (2FA)
-- Sistema de logs de auditoría
-- Rate limiting en API
-
-**DevOps:**
-- Dockerización completa del proyecto
-- Despliegue automatizado
-- Monitoreo con Laravel Telescope
-
----
-
-## 14. Solución de Problemas Comunes
-
-### 14.1. Error de permisos en storage
-
-```bash
-sudo chown -R www-data:www-data storage bootstrap/cache
-chmod -R 775 storage bootstrap/cache
-```
-
-### 14.2. Error de clave de aplicación
-
-```bash
-php artisan key:generate
-php artisan config:cache
-```
-
-### 14.3. Migraciones no se ejecutan
-
-```bash
-# Resetear y volver a migrar
-php artisan migrate:fresh
-
-# Con seeders
-php artisan migrate:fresh --seed
-```
-
-### 14.4. Error 403 en rutas de administrador
-
-Verificar que el usuario tenga `role = 'admin'` en la base de datos:
-
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'tu_email@example.com';
-```
-
-### 14.5. CSRF Token Mismatch
-
-```bash
-php artisan cache:clear
-php artisan config:clear
-php artisan view:clear
-```
-
----
-
-## 15. Contacto y Contribuciones
-
-### Autor
-**Guillen Cristofer**
-- GitHub: [@guillencristofer911-star](https://github.com/guillencristofer911-star)
-- Repositorio: [Gestion-Citas-Medicas](https://github.com/guillencristofer911-star/Gestion-Citas-Medicas)
-
-### Contribuir
-
-1. Fork el repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-### Licencia
-Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para más detalles.
-
----
-
-## 16. Glosario
-
-- **MVC:** Model-View-Controller (patrón de diseño)
-- **ORM:** Object-Relational Mapping (Eloquent en Laravel)
-- **CRUD:** Create, Read, Update, Delete
-- **FK:** Foreign Key (clave foránea)
-- **PK:** Primary Key (clave primaria)
-- **CSRF:** Cross-Site Request Forgery
-- **XSS:** Cross-Site Scripting
-- **Middleware:** Software intermedio que procesa peticiones HTTP
-- **Blade:** Motor de plantillas de Laravel
-- **Eloquent:** ORM incluido en Laravel
-
----
-
-**Última actualización:** Diciembre 2025  
-**Versión de Laravel:** 12.x  
-**Estado:** En desarrollo activo
+**Autor**: Guillén Cristófer  
+**Última actualización**: Diciembre 18, 2025  
+**Versión**: 1.2.0
