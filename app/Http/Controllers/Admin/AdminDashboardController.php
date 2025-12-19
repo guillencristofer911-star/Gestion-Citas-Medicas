@@ -13,7 +13,7 @@ class AdminDashboardController extends Controller
     public function index()
     {
         // Obtener datos para mostrar en la vista
-        $doctors = Doctor::with('user')->get();
+        $doctors = Doctor::withTrashed()->with('user')->get();
         $schedules = Schedule::with('doctor.user')->get();
         
         // CAMBIO: patient y doctor SON models, no tienen .user

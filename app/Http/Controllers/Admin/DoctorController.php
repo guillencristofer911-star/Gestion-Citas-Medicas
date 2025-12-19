@@ -117,16 +117,12 @@ class DoctorController extends Controller
                 $message = 'Doctor desactivado exitosamente';
             }
             
-            return response()->json([
-                'success' => true,
-                'message' => $message
-            ]);
+            return redirect()->route('admin.dashboard', ['section' => 'doctors'])
+            ->with('success', $message);
             
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+        }catch (\Exception $e) {
+        return redirect()->route('admin.dashboard', ['section' => 'doctors'])
+            ->with('error', 'Error: ' . $e->getMessage());
         }
     }
 }

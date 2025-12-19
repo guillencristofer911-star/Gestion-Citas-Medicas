@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 class UserController extends Controller
 {
@@ -41,6 +43,35 @@ class UserController extends Controller
                 'success' => false,
                 'message' => $e->getMessage()
             ], 400);
+        }
+    }
+
+
+
+    public function toggleStatus($userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+
+            if (Auth::id() === $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes desactivar tu propio usuario'
+                ], 403);
+            }
+            $user->active = !$user->active;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario ' . ($user->active ? 'activado' : 'desactivado') . ' exitosamente'
+            ]);
+        
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 

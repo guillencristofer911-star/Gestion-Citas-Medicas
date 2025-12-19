@@ -19,7 +19,7 @@ class DoctorObserver
 
 
 
-    public function deleted(Doctor $doctor): void
+    public function deleting(Doctor $doctor): void
     {
 
         if ($doctor->user){ 

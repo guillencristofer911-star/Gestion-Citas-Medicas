@@ -106,6 +106,7 @@ Route::middleware(['auth', 'checkRole:admin'])->group(function () {
         Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])->name('schedules.destroy');
         
         // Gestión de Usuarios
+        Route::patch('/users/{user}/toggle', [AdminUserController::class, 'toggleStatus'])->name('users.toggle');
         Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });

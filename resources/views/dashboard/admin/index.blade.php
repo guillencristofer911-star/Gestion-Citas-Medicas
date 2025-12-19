@@ -167,62 +167,60 @@
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="doctorsTableBody">
-                            @forelse($doctors as $doctor)
-                                <tr data-doctor-id="{{ $doctor->id }}">
-                                    <td>{{ $doctor->user->name }}</td>
-                                    <td>{{ $doctor->user->email }}</td>
-                                    <td>{{ $doctor->specialty }}</td>
-                                    <td>{{ $doctor->phone }}</td>
-                                    <td>
-                                        @if($doctor->active)
-                                            <span class="status-badge status-active">Activo</span>
-                                        @else
-                                            <span class="status-badge status-inactive">Inactivo</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-primary btn-sm" onclick="editDoctor({{ $doctor->id }})">
-                                            Editar
-                                        </button>
-                                        @if($doctor->active)
-                                            {{-- Desactivar --}}
-                                            <form method="POST" 
-                                                action="{{ route('admin.doctors.toggle', $doctor->id) }}" 
-                                                style="display: inline;"
-                                                onsubmit="return confirm('¿Desactivar este médico?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="active" value="0">
-                                                <input type="hidden" name="section" value="doctors">
-                                                <button type="submit" class="btn btn-danger btn-sm">
-                                                    Desactivar
+                            <tbody id="doctorsTableBody">
+                                @forelse($doctors as $doctor)
+                                    <tr data-doctor-id="{{ $doctor->id }}">
+                                        <td>{{ $doctor->user?->name ?? 'Sin usuario' }}</td>
+                                        <td>{{ $doctor->user?->email ?? 'Sin email' }}</td>
+                                        <td>{{ $doctor->specialty }}</td>
+                                        <td>{{ $doctor->phone }}</td>
+                                        <td>
+                                            {{-- Verificar si está soft deleted --}}
+                                            @if($doctor->trashed())
+                                                <span class="status-badge status-inactive">Inactivo</span>
+                                            @else
+                                                <span class="status-badge status-active">Activo</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            {{-- Verificar si está soft deleted en lugar de active --}}
+                                            @if($doctor->trashed())
+                                                {{-- Activar (restaurar) --}}
+                                                <form method="POST" 
+                                                    action="{{ route('admin.doctors.toggle', $doctor->id) }}" 
+                                                    style="display: inline;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-success btn-sm"
+                                                            onclick="return confirm('¿Activar este médico?')">
+                                                        Activar
+                                                    </button>
+                                                </form>
+                                            @else
+                                                {{-- Desactivar (soft delete) --}}
+                                                <button class="btn btn-primary btn-sm" onclick="editDoctor({{ $doctor->id }})">
+                                                    Editar
                                                 </button>
-                                            </form>
-                                        @else
-                                            {{-- Activar --}}
-                                            <form method="POST" 
-                                                action="{{ route('admin.doctors.toggle', $doctor->id) }}" 
-                                                style="display: inline;"
-                                                onsubmit="return confirm('¿Activar este médico?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="active" value="1">
-                                                <input type="hidden" name="section" value="doctors">
-                                                <button type="submit" class="btn btn-success btn-sm">
-                                                    Activar
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </td>
+                                                <form method="POST" 
+                                                    action="{{ route('admin.doctors.toggle', $doctor->id) }}" 
+                                                    style="display: inline;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('¿Desactivar este médico? El usuario será cambiado a paciente.')">
+                                                        Desactivar
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 20px;">No hay médicos registrados</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
 
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: 20px;">No hay médicos registrados</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
                     </table>
                 </div>
             </div>
@@ -311,14 +309,27 @@
                                     </td>
                                     <td>
                                         @if($user->id !== auth()->id())
-                                            @if($user->active ?? true)
-                                                <button class="btn btn-danger btn-sm" onclick="deactivateUser({{ $user->id }})">Desactivar</button>
-                                            @else
-                                                <button class="btn btn-success btn-sm" onclick="activateUser({{ $user->id }})">Activar</button>
-                                            @endif
+                                            <form method="POST" 
+                                                action="{{ route('admin.users.toggle', $user->id) }}" 
+                                                style="display: inline;"
+                                                onsubmit="return toggleUser(event, {{ $user->id }}, {{ $user->active ? 'true' : 'false' }})">
+                                                @csrf
+                                                @method('PATCH')
+                                                
+                                                @if($user->active ?? true)
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        Desactivar
+                                                    </button>
+                                                @else
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        Activar
+                                                    </button>
+                                                @endif
+                                            </form>
                                         @else
                                             <span style="color: #999;">Tu usuario</span>
                                         @endif
+
                                     </td>
                                 </tr>
                             @empty
@@ -379,175 +390,205 @@
     </div>
 
     {{-- ==================== JAVASCRIPT ==================== --}}
-    <script>
-        /**
-         * Token CSRF para peticiones AJAX (si lo necesitas en el futuro)
-         */
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+<script>
+    /**
+     * Token CSRF para peticiones AJAX
+     */
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-        /**
-         * ==================== NAVEGACIÓN DE SECCIONES CON URL ====================
-         * Cambiar entre secciones del dashboard con actualización de URL
-         */
-        function showSection(sectionId) {
-            // Ocultar todas las secciones
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.style.display = 'none';
-            });
-            
-            // Mostrar la sección seleccionada
-            const targetSection = document.getElementById(sectionId);
-            if (targetSection) {
-                targetSection.style.display = 'block';
-            }
-
-            // Actualizar menú activo
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-section') === sectionId) {
-                    item.classList.add('active');
-                }
-            });
-
-            // Actualizar URL sin recargar la página
-            const newUrl = `{{ route('admin.dashboard') }}?section=${sectionId}`;
-            window.history.pushState({section: sectionId}, '', newUrl);
+    /**
+     * ==================== NAVEGACIÓN DE SECCIONES ====================
+     */
+    function showSection(sectionId) {
+        // Ocultar todas las secciones
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Mostrar la sección seleccionada
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            targetSection.style.display = 'block';
         }
 
-        /**
-         * ==================== MANEJO DE NAVEGADOR (Atrás/Adelante) ====================
-         * Detecta cuando el usuario usa botones del navegador
-         */
-        window.addEventListener('popstate', function(event) {
-            if (event.state && event.state.section) {
-                const sectionId = event.state.section;
+        // Actualizar menú activo
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Marcar como activo el item clickeado
+        event.target.closest('.menu-item')?.classList.add('active');
+
+        // Actualizar URL sin recargar
+        const newUrl = `{{ route('admin.dashboard') }}?section=${sectionId}`;
+        window.history.pushState({section: sectionId}, '', newUrl);
+    }
+
+    /**
+     * Inicialización al cargar la página
+     */
+    window.addEventListener('load', function() {
+        // Leer sección desde URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionParam = urlParams.get('section') || 'dashboard';
+        
+        // Mostrar sección inicial
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        const initialSection = document.getElementById(sectionParam);
+        if (initialSection) {
+            initialSection.style.display = 'block';
+        }
+        
+        // Marcar menú activo
+        document.querySelectorAll('.menu-item').forEach(item => {
+            if (item.getAttribute('onclick')?.includes(sectionParam)) {
+                item.classList.add('active');
+            }
+        });
+    });
+
+    /**
+     * ==================== GESTIÓN DE USUARIOS ====================
+     */
+    
+    /**
+     * Alternar estado de usuario (activar/desactivar)
+     */
+    function toggleUser(event, userId, currentStatus) {
+        event.preventDefault();
+        
+        const action = currentStatus ? 'desactivar' : 'activar';
+        if (!confirm(`¿Estás seguro de ${action} este usuario?`)) {
+            return false;
+        }
+        
+        const form = event.target;
+        const button = form.querySelector('button[type="submit"]');
+        const originalText = button.textContent;
+        
+        // Mostrar loading
+        button.disabled = true;
+        button.textContent = 'Procesando...';
+        
+        fetch(form.action, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
                 
-                // Ocultar todas las secciones
-                document.querySelectorAll('.content-section').forEach(section => {
-                    section.style.display = 'none';
-                });
-
-                // Mostrar la sección guardada
-                const targetSection = document.getElementById(sectionId);
-                if (targetSection) {
-                    targetSection.style.display = 'block';
+                // Actualizar la fila
+                const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                if (row) {
+                    // Actualizar badge de estado
+                    const statusCell = row.querySelector('td:nth-child(4)');
+                    statusCell.innerHTML = data.active 
+                        ? '<span class="status-badge status-active">Activo</span>'
+                        : '<span class="status-badge status-inactive">Inactivo</span>';
+                    
+                    // Actualizar botón
+                    button.className = data.active ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm';
+                    button.textContent = data.active ? 'Desactivar' : 'Activar';
+                    button.disabled = false;
+                    
+                    // Actualizar handler para el nuevo estado
+                    form.onsubmit = function(e) {
+                        return toggleUser(e, userId, data.active);
+                    };
                 }
-
-                // Actualizar menú activo
-                document.querySelectorAll('.menu-item').forEach(item => {
-                    item.classList.remove('active');
-                    if (item.getAttribute('data-section') === sectionId) {
-                        item.classList.add('active');
-                    }
-                });
+            } else {
+                showAlert(data.message || 'Error al cambiar estado', 'error');
+                button.textContent = originalText;
+                button.disabled = false;
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error de conexión', 'error');
+            button.textContent = originalText;
+            button.disabled = false;
         });
+        
+        return false;
+    }
 
-        /**
-         * ==================== INICIALIZACIÓN ====================
-         * Configuración inicial al cargar la página
-         */
-        window.addEventListener('load', function() {
-            // Leer sección desde URL (?section=doctors)
-            const urlParams = new URLSearchParams(window.location.search);
-            const sectionParam = urlParams.get('section');
+    /**
+     * Mostrar alertas
+     */
+    function showAlert(message, type = 'success') {
+        const alertContainer = document.getElementById('alertContainer');
+        if (!alertContainer) {
+            // Si no existe el container, crear uno temporal
+            const tempAlert = document.createElement('div');
+            tempAlert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 8px;
+                background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
+                color: ${type === 'success' ? '#155724' : '#721c24'};
+                border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 9999;
+                animation: slideIn 0.3s ease;
+            `;
+            tempAlert.textContent = message;
+            document.body.appendChild(tempAlert);
             
-            // Determinar qué sección mostrar
-            let initialSection = 'dashboard'; // Valor por defecto
-            
-            // Si hay parámetro en la URL, usarlo
-            if (sectionParam && document.getElementById(sectionParam)) {
-                initialSection = sectionParam;
-            }
-            
-            // Mostrar la sección determinada
-            showSection(initialSection);
-
-            // Guardar estado inicial en el historial
-            window.history.replaceState({section: initialSection}, '', window.location.href);
-        });
-
-        /**
-         * ==================== EVENTOS DE MENÚ ====================
-         * Manejo de clicks en items del menú
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const sectionId = this.getAttribute('data-section');
-                    if (sectionId) {
-                        showSection(sectionId);
-                    }
-                });
-            });
-        });
-
-        // ==================== GESTIÓN DE MODALES (Solo UI) ====================
-
-        /**
-         * Abrir modal para agregar nuevo médico
-         */
-        function openAddDoctorModal() {
-            document.getElementById('doctorModalTitle').textContent = 'Agregar Nuevo Médico';
-            document.getElementById('doctorForm').reset();
-            document.getElementById('doctorId').value = '';
-            document.getElementById('doctorEmail').disabled = false;
-            document.getElementById('doctorSubmitBtn').textContent = 'Guardar';
-            document.getElementById('doctorModal').classList.add('active');
+            setTimeout(() => {
+                tempAlert.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => tempAlert.remove(), 300);
+            }, 3000);
+            return;
         }
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.style.cssText = `
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
+            color: ${type === 'success' ? '#155724' : '#721c24'};
+            border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
+            animation: slideIn 0.3s ease;
+        `;
+        alertDiv.textContent = message;
+        
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => alertDiv.remove(), 300);
+        }, 5000);
+    }
 
-        /**
-         * Editar médico existente - Solo carga datos en el modal
-         */
-        function editDoctor(doctorId) {
-            const row = document.querySelector(`tr[data-doctor-id="${doctorId}"]`);
-            if (!row) {
-                console.error('No se encontró la fila del doctor');
-                return;
-            }
+    /**
+     * ==================== GESTIÓN DE CITAS ====================
+     */
+    
+    /**
+     * Ver detalles de cita
+     */
+    function viewAppointment(appointmentId) {
+        showAlert('Funcionalidad de ver detalles en desarrollo', 'info');
+        // TODO: Implementar modal con detalles
+    }
+</script>
 
-            const cells = row.querySelectorAll('td');
 
-            document.getElementById('doctorModalTitle').textContent = 'Editar Médico';
-            document.getElementById('doctorId').value = doctorId;
-            document.getElementById('doctorName').value = cells[0].textContent.trim();
-            document.getElementById('doctorEmail').value = cells[1].textContent.trim();
-            document.getElementById('doctorEmail').disabled = true;
-            document.getElementById('doctorSpecialty').value = cells[2].textContent.trim();
-            document.getElementById('doctorPhone').value = cells[3].textContent.trim();
-            document.getElementById('doctorLicense').value = '';
-            document.getElementById('doctorSubmitBtn').textContent = 'Actualizar';
-            document.getElementById('doctorModal').classList.add('active');
-        }
 
-        /**
-         * Cerrar modal
-         */
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        /**
-         * Cerrar modal al hacer clic fuera
-         */
-        window.onclick = function(event) {
-            const modal = event.target;
-            if (modal.classList && modal.classList.contains('modal')) {
-                modal.classList.remove('active');
-            }
-        }
-
-        // ==================== GESTIÓN DE CITAS ====================
-
-        /**
-         * Ver detalles de una cita (placeholder para funcionalidad futura)
-         */
-        function viewAppointment(appointmentId) {
-            alert('Ver detalles de cita: ' + appointmentId);
-            // TODO: Implementar modal de detalles de cita
-        }
-    </script>
 
 </body>
 </html>
